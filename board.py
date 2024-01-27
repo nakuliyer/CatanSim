@@ -30,10 +30,12 @@ class Board:
             tile = tiles.pop(rand)
             if tile == Tile.DESERT:
                 num = -1
+                has_knight = True
             else:
                 rand = np.random.randint(0, len(nums))
                 num = nums.pop(rand)
-            row.append(Tile(tile, num))
+                has_knight = False
+            row.append(Tile(tile, num, has_knight))
             if len(row) == 5 - abs(r - 2):
                 self.tiles.append(row)
                 row = []

@@ -6,6 +6,7 @@ class DevCard:
     ROADS = 2
     PLENTY = 3
     MONOPOLY = 4
+    NO_OP = 5
     
 class DevCardPile:
     def __init__(self):
@@ -14,4 +15,7 @@ class DevCardPile:
         random.shuffle(self.pile)
         
     def draw_top(self):
-        return self.pile.pop(0)
+        if len(self.pile):
+            return self.pile.pop(0)
+        else:
+            return DevCard.NO_OP
