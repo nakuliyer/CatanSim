@@ -1,5 +1,5 @@
 
-from typing import List, Set
+from typing import List, Set, Tuple
 
 def to_name(resource: int):
     h = {
@@ -35,11 +35,12 @@ class Tile:
     ROCK = 4
     DESERT = 5
 
-    def __init__(self, tile: int, value: int, has_knight: bool):
+    def __init__(self, tile: int, value: int, has_knight: bool, pos: Tuple[int, int]):
         self.tile: int = tile
         self.value: int = value
         self.has_knight: bool = has_knight
         self.owning_player_ids: Set[int] = set()
+        self.pos: Tuple[int][int] = pos
 
     def __repr__(self):
         h = {0: "W", 1: "T", 2: "S", 3: "M", 4: "R", 5: "D"}
@@ -77,3 +78,4 @@ class Action:
         return "Action {} with parameters {}".format(h[self.action], self.params)
 
 VERBOSE = 1
+GUI = 0

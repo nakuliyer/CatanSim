@@ -24,6 +24,7 @@ class Board:
         tiles = [item for row in tiles for item in row]
         nums = [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12]
         r = 0
+        c = 0
         row = []
         while len(tiles):
             rand = np.random.randint(0, len(tiles))
@@ -35,11 +36,13 @@ class Board:
                 rand = np.random.randint(0, len(nums))
                 num = nums.pop(rand)
                 has_knight = False
-            row.append(Tile(tile, num, has_knight))
+            row.append(Tile(tile, num, has_knight, (r, c)))
+            c += 1
             if len(row) == 5 - abs(r - 2):
                 self.tiles.append(row)
                 row = []
                 r += 1
+                c = 0
                 
     def can_settle(self, pos: Position):
         if pos.fixture == None:

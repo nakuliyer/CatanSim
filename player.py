@@ -257,6 +257,8 @@ class Player:
                 self.resources[Tile.WHEAT] -= 1
                 self.resources[Tile.SHEEP] -= 1
         elif action.action == Action.BUILD_ROAD_INIT or action.action == Action.BUILD_ROAD or action.action == Action.USE_DEV_ROADS or action.action == Action.SECOND_USE_DEV_ROADS:
+            if self.roads_remaining == 0:
+                return
             self.roads_remaining -= 1
             setattr(action.pos, action.road_name, self.player_id)
             # set opposite direction from the other edge endpoint
