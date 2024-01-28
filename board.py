@@ -109,6 +109,9 @@ class Board:
         self.positions[5][3].adjacent_port = Port.WHEAT
         self.positions[5][5].adjacent_port = Port.THREE_ONE
         self.positions[5][6].adjacent_port = Port.THREE_ONE
+        
+    def get_positions(self, owned_by_player: int = None):
+        return [pos for row in self.positions for pos in row if (owned_by_player == None or owned_by_player == pos.fixture)]
 
     def __str__(self):
         s = ""

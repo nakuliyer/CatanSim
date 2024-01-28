@@ -1,16 +1,6 @@
 
 from typing import List, Set, Tuple
-
-def to_name(resource: int):
-    h = {
-        0: "WHEAT",
-        1: "TREE",
-        2: "SHEEP",
-        3: "MUD",
-        4: "ROCK"
-    }
-    return h[resource]
-
+import random
 
 class GameStats:
     longest_road_count = 0
@@ -25,6 +15,17 @@ class Port:
     MUD = 3
     ROCK = 4
     THREE_ONE = 5
+    
+    def to_name(port: int):
+        h = {
+            0: "WHEAT",
+            1: "TREE",
+            2: "SHEEP",
+            3: "MUD",
+            4: "ROCK",
+            5: "THREE TO ONE"
+        }
+        return h[port]
 
 
 class Tile:
@@ -48,6 +49,17 @@ class Tile:
         if 0 < self.value and self.value < 10:
             v = "0" + v
         return h[self.tile] + "/" + v
+
+    def to_name(resource: int):
+        h = {
+            0: "WHEAT",
+            1: "TREE",
+            2: "SHEEP",
+            3: "MUD",
+            4: "ROCK",
+            5: "DESERT"
+        }
+        return h[resource]
     
 class Action:
     DO_NOTHING = -1
@@ -65,17 +77,84 @@ class Action:
     USE_YEAR_OF_PLENTY = 11
     TWO_TO_ONE = 12
     SECOND_USE_DEV_ROADS = 13
-    
-    # TODO: trading
+    ROB = 14
+    PROPOSE_TRADE = 15
+    TRADE = 16
     
     def __init__(self, action: int, **params):
         self.action = action
         self.params = params
         self.__dict__.update(params)
         
+    def clean_params(self):
+        # just here for pretty-ish printing
+        h = {}
+        for param in self.params:
+            if param == "source" or param == "dest" or param.startswith("resource"):
+                h[param] = Tile.to_name(self.params[param])
+            if param == "mine" or param == "theirs":
+                h[param] = list(map(Tile.to_name, self.params[param]))
+            else:
+                h[param] = self.params[param]
+        return ", ".join(["{}={}".format(k, v) for k, v in h.items()])
+        
     def __repr__(self) -> str:
         h = {v: k for k, v in Action.__dict__.items() if not k.startswith('__') and not callable(k)}
-        return "Action {} with parameters {}".format(h[self.action], self.params)
+        return "{}[{}]".format(h[self.action], self.clean_params())
+    
+class DevCard:
+    KNIGHT = 0
+    VP = 1
+    ROADS = 2
+    PLENTY = 3
+    MONOPOLY = 4
+    NO_OP = 5
+    
+    def to_name(card: int):
+        h = {
+            0: "KNIGHT",
+            1: "VP",
+            2: "BUILD ROADS",
+            3: "YEAR OF PLENTY",
+            4: "MONOPOLY",
+            5: "NO OP"
+        }
+        return h[card]
+    
+    def to_names(list_of_cards: List[int]):
+        return "[{}]".format(", ".join(map(DevCard.to_name, filter(lambda x: x != 5, list_of_cards))))
+    
+class DevCardPile:
+    def __init__(self):
+        self.pile = [[DevCard.KNIGHT] * 14, [DevCard.VP] * 5, [DevCard.ROADS] * 2, [DevCard.PLENTY] * 2, [DevCard.MONOPOLY] * 2]
+        self.pile = [item for row in self.pile for item in row]
+        random.shuffle(self.pile)
+        
+    def draw_top(self):
+        if len(self.pile):
+            return self.pile.pop(0)
+        else:
+            return DevCard.NO_OP
 
-VERBOSE = 1
-GUI = 0
+
+class Messages:
+    def __init__(self, verbosity: int):
+        self.messages = []
+        self.verbosity = verbosity
+
+    def add(self, message: str, level: int = 0):
+        # Level 0 is most important (Game Winning)
+        # Level 1 is verbose (Most Game Updates, e.g. Settling, Developing)
+        # Level 2 is general (Collected Resources)
+        # Level 3 is for reccuring resource info, turn info, etc
+        self.messages.append((message, level))
+        
+    def print_all(self):
+        for message, level in self.messages:
+            if level <= self.verbosity:
+                if level == 3:
+                    print("===\n{}\n===".format(message))
+                else:
+                    print(message)
+        print("\n\n")
+        self.messages = []

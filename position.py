@@ -1,7 +1,7 @@
 from typing import List
 import random
 
-from basic import Tile
+from basic import Tile, Port
 
 class Position:
     def __init__(
@@ -48,6 +48,23 @@ class Position:
         if can_go(pos.right, pos.right_road): next_q.append(pos_path + [pos.right])
         if can_go(pos.up, pos.up_road): next_q.append(pos_path + [pos.up])
         if can_go(pos.down, pos.down_road): next_q.append(pos_path + [pos.down])
+        
+    def get_empty_road_names(self):
+        empty_road_names = ["left_road", "right_road", "up_road", "down_road"]
+        road_to_dir = {
+            "left_road": "left",
+            "right_road": "right",
+            "up_road": "up",
+            "down_road": "down",
+        }
+        empty_road_names = [
+            road_name
+            for road_name in empty_road_names
+            if getattr(self, road_name) == None
+            and getattr(self, road_to_dir[road_name]) != None
+        ]
+        return empty_road_names
+        
 
     # def dist_port(self, port: int, player: int):
     #     seen = set(self.pos)
@@ -70,7 +87,6 @@ class Position:
     #     pass
 
     def __str__(self):
-        h = {0: "W", 1: "T", 2: "S", 3: "M", 4: "R", 5: "3"}
         adj = "(" + ",".join(list(map(str, self.adjacent_tiles))) + ")"
 
         def gpos(pos_or_non):
@@ -79,7 +95,7 @@ class Position:
             else:
                 return "-"
 
-        port = h[self.adjacent_port] if self.adjacent_port else "-"
+        port = Port.to_name(self.adjacent_port) if self.adjacent_port else "-"
         return "pos={} adj={} port={} left={} right={} up={} down={}".format(
             self.pos,
             adj,
