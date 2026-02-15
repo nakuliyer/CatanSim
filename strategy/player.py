@@ -1,3 +1,4 @@
+from collections import defaultdict
 from copy import deepcopy
 import random
 from typing import List, Set, Tuple
@@ -28,8 +29,8 @@ class Player(ABC):
     # General Methods #
     ###################
 
-    def __repr__(self):
-        return "Player {} (resources={}, roads_remaining={}, settlements_remaining={}, cities_remaining={}, dev_cards={}, knights_played={}, controlled_ports={}, longest_road_length={})".format(
+    def __str__(self):
+        return "Player {} (\n\tresources={},\n\troads_remaining={},\n\tsettlements_remaining={},\n\tcities_remaining={},\n\tdev_cards={},\n\tknights_played={},\n\tcontrolled_ports={},\n\tlongest_road_length={})".format(
             self.player_id,
             {Tile.to_name(k): v for k, v in self.resources.items()},
             self.roads_remaining,
@@ -93,6 +94,12 @@ class Player(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def finalizes_trade(
+        self, propose_trade_action: Action, players: List[int]
+    ) -> Action:
+        raise NotImplementedError()
+
+    @abstractmethod
     def do(
         self,
         board: Board,
@@ -129,7 +136,7 @@ class Player(ABC):
         if max_road_size > stats.longest_road_count and max_road_size >= 5:
             stats.longest_road_count = max_road_size
             stats.longest_road_player = self.player_id
-            logger.info(
+            logger.game(
                 "Player {} now has plaque for longest road of size {}".format(
                     self.player_id, max_road_size
                 )
@@ -230,6 +237,15 @@ class Player(ABC):
     #################################
     # Building Capabilities Methods #
     #################################
+
+    def can_accept_trade(self, propose_trade_action: Action) -> bool:
+        res_to_qty = defaultdict(int)
+        for res in propose_trade_action.params["theirs"]:
+            res_to_qty[res] += 1
+        for res in propose_trade_action.params["theirs"]:
+            if self.resources[res] < res_to_qty[res]:
+                return False
+        return True
 
     def can_build_dev_card(self):
         return (
@@ -393,7 +409,7 @@ class Player(ABC):
         stats: GameStats,
         dev_cards: DevCardPile,
     ) -> None:
-        logger.info("Player {} did {}".format(self.player_id, action))
+        logger.game("Player {} did {}".format(self.player_id, action))
         if action.action in (Action.SETTLE_INIT, Action.SETTLE):
             self.settlements_remaining -= 1
             pos_tuple: tuple[int, int] = action.params["pos"]
@@ -443,7 +459,7 @@ class Player(ABC):
             self.resources[Tile.WHEAT] -= 1
             card = dev_cards.draw_top()
             self.unusable_dev_cards.append(card)
-            logger.info(
+            logger.debug(
                 "Player {} got card {}".format(self.player_id, DevCard.to_name(card))
             )
         elif action.action == Action.BUILD_CITY:
@@ -491,22 +507,20 @@ class Player(ABC):
                     )
                     player_to_steal_from.set_resource_cards(op_resource_cards)
                     self.resources[stolen_card] += 1
-                    if logger.verbosity == 3:
-                        logger.info(
-                            "Player {} stole a {} from Player {}".format(
-                                self.player_id,
-                                Tile.to_name(stolen_card),
-                                player_to_steal_from.player_id,
-                            )
+                    logger.debug(
+                        "Player {} stole a {} from Player {}".format(
+                            self.player_id,
+                            Tile.to_name(stolen_card),
+                            player_to_steal_from.player_id,
                         )
-                    else:
-                        logger.info(
-                            "Player {} stole a resource from Player {}".format(
-                                self.player_id, player_to_steal_from.player_id
-                            )
+                    )
+                    logger.game(
+                        "Player {} stole a resource from Player {}".format(
+                            self.player_id, player_to_steal_from.player_id
                         )
+                    )
                 else:
-                    logger.info(
+                    logger.game(
                         "Player {} tried to steal from Player {}, but nothing to steal".format(
                             self.player_id, player_to_steal_from.player_id
                         )
@@ -520,7 +534,7 @@ class Player(ABC):
                 stealing = player_to_steal_from.resources[resource]
                 player_to_steal_from.resources[resource] = 0
                 total += stealing
-                logger.info(
+                logger.game(
                     "Stole {} {} from Player {} with Monopoly".format(
                         stealing,
                         Tile.to_name(resource),
@@ -545,5 +559,9 @@ class Player(ABC):
             for res in theirs:
                 other_player.resources[res] -= 1
                 self.resources[res] += 1
+        elif action.action == Action.PROPOSE_TRADE:
+            raise ValueError(
+                "Propose trade action must be handled in the main game loop"
+            )
         else:
             raise ValueError("Unknown Action")

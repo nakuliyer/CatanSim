@@ -38,8 +38,8 @@ class Action:
             12: "Propose trade",
             13: "Trade",
             14: "Get dev card",
-            15: "Settle init",
-            16: "Build road init",
+            15: "Initial settlement",
+            16: "Initial road",
         }
         return h[self.action]
 

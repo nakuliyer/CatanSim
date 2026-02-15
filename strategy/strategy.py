@@ -54,6 +54,16 @@ class RandomStrategy(Player):
         # TODO: counter-offers?
         return random.random() < 0.5
 
+    def finalizes_trade(
+        self, propose_trade_action: Action, players: List[int]
+    ) -> Action:
+        return Action(
+            Action.TRADE,
+            with_player=random.choice(players),
+            mine=propose_trade_action.params["mine"],
+            theirs=propose_trade_action.params["theirs"],
+        )
+
     def do(
         self,
         board: Board,
@@ -76,29 +86,32 @@ class RandomStrategy(Player):
             if not self.has_any_resource():
                 return Action(Action.DO_NOTHING)
             cards = self.get_resource_cards()
-            num_of_cards_to_give = int((random.random() ** 3) * len(cards) + 1)
+            # limit number of cards to give in trade to 3 to avoid too much trading
+            num_of_cards_to_give = min(random.randint(1, 3), len(cards))
             cards_to_give = random.sample(cards, num_of_cards_to_give)
-            trades_avail = []
-            for player in players:
-                if player.player_id == self.player_id:
-                    continue
-                other_cards = player.get_resource_cards()
-                if len(other_cards) == 0:
-                    continue
-                num_of_cards_to_take = int(
-                    (random.random() ** 3) * len(other_cards) + 1
-                )
-                trades_avail.append(
-                    (player.player_id, random.sample(other_cards, num_of_cards_to_take))
-                )
-            if not len(trades_avail):
-                return Action(Action.DO_NOTHING)
-            other_player_id, cards_to_take = random.choice(trades_avail)
+            num_cards_wanted = random.randint(1, 3)
+            cards_wanted = random.choices([0, 1, 2, 3, 4], k=num_cards_wanted)
+            # trades_avail = []
+            # for player in players:
+            #     if player.player_id == self.player_id:
+            #         continue
+            #     other_cards = player.get_resource_cards()
+            #     if len(other_cards) == 0:
+            #         continue
+            #     num_of_cards_to_take = int(
+            #         (random.random() ** 3) * len(other_cards) + 1
+            #     )
+            #     trades_avail.append(
+            #         (player.player_id, random.sample(other_cards, num_of_cards_to_take))
+            #     )
+            # if not len(trades_avail):
+            #     return Action(Action.DO_NOTHING)
+            # other_player_id, cards_to_take = random.choice(trades_avail)
             action = Action(
                 Action.PROPOSE_TRADE,
-                with_player=other_player_id,
+                # with_player=other_player_id,
                 mine=cards_to_give,
-                theirs=cards_to_take,
+                theirs=cards_wanted,
             )
             return action
         else:

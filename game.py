@@ -19,20 +19,22 @@ def play(gui: bool, force_quit_after_round: int) -> None:
         init_gui()
 
     board = RandomBoard()
-    logger.info("Board is\n{}".format(board))
+    logger.game("Board is\n{}".format(board))
     cards = DevCardPile()
     stats = GameStats()
     players: list[Player] = [
+        RandomStrategy(0),
         RandomStrategy(1),
         RandomStrategy(2),
-        RandomStrategy(3),
     ]
     for second in [False, True]:
         order = -1 if second else 1
         for player in players[::order]:
             for action in player.settle(board, second):
                 player.submit_action(action, board, players, stats, cards)
-    logger.info("\n".join([str(player) for player in players]))
+    for player in players:
+        logger.debug(player)
+
     rnd = 0
     turn = 0
     gg = False
@@ -40,7 +42,7 @@ def play(gui: bool, force_quit_after_round: int) -> None:
         if gui:
             quit_gui()
         d6 = random.randint(1, 6) + random.randint(1, 6)
-        logger.info("{} rolled".format(d6))
+        logger.game("{} rolled".format(d6))
         for player in players:
             player.handle_dice_roll(board, d6)
         if d6 == 7:
@@ -50,25 +52,44 @@ def play(gui: bool, force_quit_after_round: int) -> None:
         action = players[turn].do(board, players, stats, cards)
         while action.action != Action.DO_NOTHING:
             if action.action == Action.PROPOSE_TRADE:
-                logger.info(
+                logger.game(
                     "Player {} proposes trade {}".format(
                         players[turn].player_id, action
                     )
                 )
-                if Player.get_player_by_id(
-                    players, action.params["with_player"]
-                ).accepts_trade(action):
-                    logger.info("Trade Accepted")
-                    action.action = Action.TRADE
-                    players[turn].submit_action(action, board, players, stats, cards)
+                logger.debug(
+                    "Player {} has cards {}".format(
+                        players[turn].player_id, players[turn].get_resource_cards()
+                    )
+                )
+                accepting_players: list[int] = []
+                for other_player in players:
+                    if other_player.player_id == players[turn].player_id:
+                        continue
+                    if other_player.can_accept_trade(
+                        action
+                    ) and other_player.accepts_trade(action):
+                        logger.game(
+                            "Player {} accepts the trade".format(other_player.player_id)
+                        )
+                        accepting_players.append(other_player.player_id)
+                if not accepting_players:
+                    logger.game("No players accepted the trade")
                 else:
-                    logger.info("Trade Denied")
+                    action = players[turn].finalizes_trade(action, accepting_players)
+                    logger.debug(
+                        "Other player chosen for trade {} with cards {}".format(
+                            action.params["with_player"],
+                            players[action.params["with_player"]].get_resource_cards(),
+                        )
+                    )
+                    players[turn].submit_action(action, board, players, stats, cards)
             else:
                 players[turn].submit_action(action, board, players, stats, cards)
             action = players[turn].do(board, players, stats, cards)
         vps = players[turn].vps(board, stats)
         if vps >= 10:
-            logger.critical("Player {} won!".format(players[turn].player_id))
+            logger.game("Player {} won!".format(players[turn].player_id))
             gg = True
         if gui:
             draw_gui(board)
@@ -81,7 +102,8 @@ def play(gui: bool, force_quit_after_round: int) -> None:
         for player in players:
             player.check_all_ok()
             player.turn_ended()
-        logger.info("\n".join([str(player) for player in players]))
+        for player in players:
+            logger.debug(player)
         logger.print_all()
         logger.flush()
     if gui:
@@ -91,7 +113,11 @@ def play(gui: bool, force_quit_after_round: int) -> None:
 
 
 def play_cli(force_quit_after_round: int) -> None:
-    play(gui=False, force_quit_after_round=force_quit_after_round)
+    try:
+        play(gui=False, force_quit_after_round=force_quit_after_round)
+    except:
+        logger.print_all()
+        raise
 
 
 def play_gui(force_quit_after_round: int) -> None:

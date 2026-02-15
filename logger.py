@@ -2,9 +2,8 @@
 verbosity = -1
 
 # Static global verbosity levels
-CRITICAL = 0
-INFO = 1
-DEBUG = 2
+GAME = 0
+DEBUG = 1
 
 
 class Message:
@@ -17,7 +16,7 @@ class Message:
 messages = []
 
 
-def log(message, level=INFO) -> None:
+def log(message, level=DEBUG) -> None:
     """Log a message with a given verbosity level."""
     if level <= verbosity:
         messages.append(Message(message, level))
@@ -29,10 +28,8 @@ def print_all() -> None:
         return
 
     def level_to_prefix(level):
-        if level == CRITICAL:
-            return "[CRTICAL] "
-        if level == INFO:
-            return "[INFO] "
+        if level == GAME:
+            return "[GAME] "
         elif level == DEBUG:
             return "[DEBUG] "
 
@@ -54,14 +51,9 @@ def set_verbosity(level):
     verbosity = level
 
 
-def critical(message):
-    """Log a critical message."""
-    log(message, CRITICAL)
-
-
-def info(message):
-    """Log an info message."""
-    log(message, INFO)
+def game(message):
+    """Log a game message."""
+    log(message, GAME)
 
 
 def debug(message):
