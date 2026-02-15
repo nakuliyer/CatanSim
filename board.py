@@ -1,6 +1,6 @@
-from typing import List, Tuple
+from typing import List
+
 import numpy as np
-import random
 
 from basic import Tile, Port
 from position import Position
@@ -44,8 +44,8 @@ class Board:
                 r += 1
                 c = 0
                 
-    def can_settle(self, pos: Position):
-        if pos.fixture == None:
+    def can_settle(self, pos: Position) -> bool:
+        if pos.fixture is None:
             for adj in pos.adjacent_pos():
                 if adj.fixture:
                     return False
@@ -111,7 +111,12 @@ class Board:
         self.positions[5][6].adjacent_port = Port.THREE_ONE
         
     def get_positions(self, owned_by_player: int = None):
-        return [pos for row in self.positions for pos in row if (owned_by_player == None or owned_by_player == pos.fixture)]
+        return [
+            pos
+            for row in self.positions
+            for pos in row
+            if owned_by_player is None or owned_by_player == pos.fixture
+        ]
 
     def __str__(self):
         s = ""

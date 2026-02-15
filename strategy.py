@@ -1,5 +1,5 @@
-from typing import Set, List, Tuple
 import random
+from typing import List
 
 from basic import Action, GameStats, DevCardPile
 from position import Position
@@ -13,15 +13,28 @@ class RandomStrategy(Player):
             pos = random.choice(random.choice(board.positions))
             if board.can_settle(pos):
                 road_names = ["left_road", "right_road", "up_road", "down_road"]
-                road_to_dir = {"left_road": "left", "right_road": "right", "up_road": "up", "down_road": "down"}
-                road_names = [road_name for road_name in road_names if getattr(pos, road_name) == None and getattr(pos, road_to_dir[road_name]) != None]
+                road_to_dir = {
+                    "left_road": "left",
+                    "right_road": "right",
+                    "up_road": "up",
+                    "down_road": "down",
+                }
+                road_names = [
+                    road_name
+                    for road_name in road_names
+                    if getattr(pos, road_name) is None
+                    and getattr(pos, road_to_dir[road_name]) is not None
+                ]
                 if len(road_names):
                     road_name = random.choice(road_names)
                     if second:
                         for tile in pos.adjacent_tiles:
                             if tile.tile < 5:
-                                self.resources[tile.tile] += 1 # collect initial resources
-                    return [Action(Action.SETTLE_INIT, pos=pos), Action(Action.BUILD_ROAD_INIT, pos=pos, road_name=road_name)]
+                                self.resources[tile.tile] += 1  # collect initial resources
+                    return [
+                        Action(Action.SETTLE_INIT, pos=pos),
+                        Action(Action.BUILD_ROAD_INIT, pos=pos, road_name=road_name),
+                    ]
                 
     def choose_robber_action(self, board: Board) -> Action:
         robber_options = self.get_robber_options(board)

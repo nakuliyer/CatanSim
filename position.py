@@ -1,5 +1,4 @@
-from typing import List
-import random
+from typing import List, Optional
 
 from basic import Tile, Port
 
@@ -8,7 +7,7 @@ class Position:
         self,
         row,
         col,
-        adjacent_tiles=[],
+        adjacent_tiles: Optional[List[Tile]] = None,
         adjacent_port=None,
         left=None,
         right=None,
@@ -16,38 +15,50 @@ class Position:
         down=None,
     ):
         self.pos = (row, col)
-        self.adjacent_tiles: List[Tile] = adjacent_tiles
+        self.adjacent_tiles: List[Tile] = adjacent_tiles or []
         self.adjacent_port = adjacent_port
         self.left = left
         self.right = right
         self.up = up
         self.down = down
-        self.left_road = None # player who owns
-        self.right_road = None # player who owns
-        self.up_road = None # player who owns
-        self.down_road = None # player who owns
-        self.fixture = None # player who owns
-        self.fixture_type = None # 0 for house, 1 for city
+        self.left_road = None  # player who owns
+        self.right_road = None  # player who owns
+        self.up_road = None  # player who owns
+        self.down_road = None  # player who owns
+        self.fixture = None  # player who owns
+        self.fixture_type = None  # 0 for house, 1 for city
         
     def adjacent_pos(self):
         adj = []
-        if self.left: adj.append(self.left)
-        if self.right: adj.append(self.right)
-        if self.up: adj.append(self.up)
-        if self.down: adj.append(self.down)
+        if self.left:
+            adj.append(self.left)
+        if self.right:
+            adj.append(self.right)
+        if self.up:
+            adj.append(self.up)
+        if self.down:
+            adj.append(self.down)
         return adj
         
+    @staticmethod
     def add_adjacent_pos_to_queue(player: int, pos, next_q, seen, pos_path):
         def can_go(new_pos, route):
-            if new_pos and (new_pos.pos not in seen) and \
-                           (route == None or route == player) and \
-                           (new_pos.fixture == None or new_pos.fixture == player):
+            if (
+                new_pos
+                and (new_pos.pos not in seen)
+                and (route is None or route == player)
+                and (new_pos.fixture is None or new_pos.fixture == player)
+            ):
                 return True
             return False
-        if can_go(pos.left, pos.left_road): next_q.append(pos_path + [pos.left])
-        if can_go(pos.right, pos.right_road): next_q.append(pos_path + [pos.right])
-        if can_go(pos.up, pos.up_road): next_q.append(pos_path + [pos.up])
-        if can_go(pos.down, pos.down_road): next_q.append(pos_path + [pos.down])
+        if can_go(pos.left, pos.left_road):
+            next_q.append(pos_path + [pos.left])
+        if can_go(pos.right, pos.right_road):
+            next_q.append(pos_path + [pos.right])
+        if can_go(pos.up, pos.up_road):
+            next_q.append(pos_path + [pos.up])
+        if can_go(pos.down, pos.down_road):
+            next_q.append(pos_path + [pos.down])
         
     def get_empty_road_names(self):
         empty_road_names = ["left_road", "right_road", "up_road", "down_road"]
@@ -60,8 +71,8 @@ class Position:
         empty_road_names = [
             road_name
             for road_name in empty_road_names
-            if getattr(self, road_name) == None
-            and getattr(self, road_to_dir[road_name]) != None
+            if getattr(self, road_name) is None
+            and getattr(self, road_to_dir[road_name]) is not None
         ]
         return empty_road_names
         

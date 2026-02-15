@@ -1,5 +1,5 @@
-from typing import Set, List, Tuple
 import random
+from typing import List, Set, Tuple
 
 from basic import Port, Tile, GameStats, Action, DevCard, DevCardPile, Messages
 from board import Board
@@ -44,6 +44,7 @@ class Player:
     def has_any_resource(self) -> bool:
         return any(map(self.has_resource, self.resources))
 
+    @staticmethod
     def get_player_by_id(players: List["Player"], player_id: int) -> "Player":
         for player in players:
             if player.player_id == player_id:
@@ -74,7 +75,7 @@ class Player:
 
     def check_longest_road(self, board: Board, stats: GameStats):
         def traverse(player: int, seen: List[Tuple[int, int]], node: Position):
-            seen += [node.pos]
+            seen = seen + [node.pos]
             options = []
             if node.left_road == player and node.left.pos not in seen:
                 options.append(traverse(player, seen, node.left))
@@ -86,8 +87,7 @@ class Player:
                 options.append(traverse(player, seen, node.down))
             if not options:
                 return 0
-            else:
-                return 1 + max(options)
+            return 1 + max(options)
 
         max_road_size = 0
         for row in board.positions:
@@ -370,7 +370,7 @@ class Player:
         dev_cards: DevCardPile,
     ) -> Action:
         self.messages.add("Player {} did {}".format(self.player_id, action), 1)
-        if action.action == Action.SETTLE_INIT or action.action == Action.SETTLE:
+        if action.action in (Action.SETTLE_INIT, Action.SETTLE):
             self.settlements_remaining -= 1
             action.pos.fixture = self.player_id
             action.pos.fixture_type = 0
@@ -383,11 +383,11 @@ class Player:
                 self.resources[Tile.TREE] -= 1
                 self.resources[Tile.WHEAT] -= 1
                 self.resources[Tile.SHEEP] -= 1
-        elif (
-            action.action == Action.BUILD_ROAD_INIT
-            or action.action == Action.BUILD_ROAD
-            or action.action == Action.USE_DEV_ROADS
-            or action.action == Action.SECOND_USE_DEV_ROADS
+        elif action.action in (
+            Action.BUILD_ROAD_INIT,
+            Action.BUILD_ROAD,
+            Action.USE_DEV_ROADS,
+            Action.SECOND_USE_DEV_ROADS,
         ):
             if self.roads_remaining == 0:
                 if action.action == Action.USE_DEV_ROADS:
@@ -441,7 +441,7 @@ class Player:
         elif action.action == Action.TWO_TO_ONE:
             self.resources[action.source] -= 2
             self.resources[action.dest] += 1
-        elif action.action == Action.USE_KNIGHT or action.action == Action.ROB:
+        elif action.action in (Action.USE_KNIGHT, Action.ROB):
             if action.action == Action.USE_KNIGHT:
                 self.dev_cards.remove(DevCard.KNIGHT)
                 self.knights_played += 1
@@ -449,7 +449,7 @@ class Player:
                 for tile in row:
                     tile.has_knight = False
             action.tile.has_knight = True
-            if action.steal_from_id != None:
+            if action.steal_from_id is not None:
                 player_to_steal_from: "Player" = Player.get_player_by_id(
                     players, action.steal_from_id
                 )
@@ -497,9 +497,12 @@ class Player:
             self.resources[action.resource1] += 1
             self.resources[action.resource2] += 1
         elif action.action == Action.TRADE:
+            other_player = Player.get_player_by_id(players, action.with_player)
             for res in action.mine:
                 self.resources[res] -= 1
+                other_player.resources[res] += 1
             for res in action.theirs:
-                Player.get_player_by_id(players, action.with_player).resources[res] -= 1
+                other_player.resources[res] -= 1
+                self.resources[res] += 1
         else:
             raise ValueError("Unknown Action")

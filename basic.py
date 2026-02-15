@@ -1,6 +1,6 @@
 
-from typing import List, Set, Tuple
 import random
+from typing import List, Set, Tuple
 
 class GameStats:
     longest_road_count = 0
@@ -16,7 +16,8 @@ class Port:
     ROCK = 4
     THREE_ONE = 5
     
-    def to_name(port: int):
+    @staticmethod
+    def to_name(port: int) -> str:
         h = {
             0: "WHEAT",
             1: "TREE",
@@ -41,7 +42,7 @@ class Tile:
         self.value: int = value
         self.has_knight: bool = has_knight
         self.owning_player_ids: Set[int] = set()
-        self.pos: Tuple[int][int] = pos
+        self.pos: Tuple[int, int] = pos
 
     def __repr__(self):
         h = {0: "W", 1: "T", 2: "S", 3: "M", 4: "R", 5: "D"}
@@ -50,7 +51,8 @@ class Tile:
             v = "0" + v
         return h[self.tile] + "/" + v
 
-    def to_name(resource: int):
+    @staticmethod
+    def to_name(resource: int) -> str:
         h = {
             0: "WHEAT",
             1: "TREE",
@@ -92,7 +94,7 @@ class Action:
         for param in self.params:
             if param == "source" or param == "dest" or param.startswith("resource"):
                 h[param] = Tile.to_name(self.params[param])
-            if param == "mine" or param == "theirs":
+            elif param == "mine" or param == "theirs":
                 h[param] = list(map(Tile.to_name, self.params[param]))
             else:
                 h[param] = self.params[param]
@@ -110,7 +112,8 @@ class DevCard:
     MONOPOLY = 4
     NO_OP = 5
     
-    def to_name(card: int):
+    @staticmethod
+    def to_name(card: int) -> str:
         h = {
             0: "KNIGHT",
             1: "VP",
@@ -121,25 +124,31 @@ class DevCard:
         }
         return h[card]
     
-    def to_names(list_of_cards: List[int]):
+    @staticmethod
+    def to_names(list_of_cards: List[int]) -> str:
         return "[{}]".format(", ".join(map(DevCard.to_name, filter(lambda x: x != 5, list_of_cards))))
     
 class DevCardPile:
     def __init__(self):
-        self.pile = [[DevCard.KNIGHT] * 14, [DevCard.VP] * 5, [DevCard.ROADS] * 2, [DevCard.PLENTY] * 2, [DevCard.MONOPOLY] * 2]
+        self.pile = [
+            [DevCard.KNIGHT] * 14,
+            [DevCard.VP] * 5,
+            [DevCard.ROADS] * 2,
+            [DevCard.PLENTY] * 2,
+            [DevCard.MONOPOLY] * 2,
+        ]
         self.pile = [item for row in self.pile for item in row]
         random.shuffle(self.pile)
         
     def draw_top(self):
         if len(self.pile):
             return self.pile.pop(0)
-        else:
-            return DevCard.NO_OP
+        return DevCard.NO_OP
 
 
 class Messages:
     def __init__(self, verbosity: int):
-        self.messages = []
+        self.messages: List[Tuple[str, int]] = []
         self.verbosity = verbosity
 
     def add(self, message: str, level: int = 0):
