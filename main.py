@@ -13,10 +13,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--force-quit-after-round", type=int, default=DEFAULT_FORCE_QUIT_AFTER_ROUND
     )
+    parser.add_argument(
+        "--speed", type=float, default=100, help="Speed multiplier for the game"
+    )
     args = parser.parse_args()
 
     logger.set_verbosity(args.verbosity)
     if args.gui:
-        play_gui(args.force_quit_after_round)
+        play_gui(args.force_quit_after_round, args.speed)
     else:
-        play_cli(args.force_quit_after_round)
+        play_cli(args.force_quit_after_round, args.speed)

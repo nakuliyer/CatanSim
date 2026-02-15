@@ -14,11 +14,13 @@ class Game:
         self,
         gui: bool,
         force_quit_after_round: int,
+        speed: float,
         players: list[Player],
         board: Board,
     ) -> None:
         self.gui = gui
         self.force_quit_after_round = force_quit_after_round
+        self.speed = speed
         self.players = players
         self.board = board
 
@@ -104,21 +106,24 @@ class Game:
                     action, self.board, self.players, self.stats, self.cards
                 )
             action = self.players[turn].do(self.board, self.stats, self.cards)
-        vps = self.players[turn].vps(self.board, self.stats)
-        if vps >= 10:
-            logger.game("Player {} won!".format(self.players[turn].color))
-            return False
         if self.gui:
             draw_gui(self.board)
-            time.sleep(0.01)
+        time.sleep(1 / self.speed)
         for player in self.players:
             player.check_all_ok()
             player.turn_ended()
         for player in self.players:
             logger.debug(player)
-        logger.print_all()
-        logger.flush()
-        return True
+        vps = self.players[turn].vps(self.board, self.stats)
+        if vps >= 10:
+            logger.game("Player {} won!".format(self.players[turn].color))
+            logger.print_all()
+            logger.flush()
+            return False
+        else:
+            logger.print_all()
+            logger.flush()
+            return True
 
     def post_game(self) -> None:
         if self.gui:
@@ -147,23 +152,23 @@ class Game:
             raise
 
 
-def play(gui: bool, force_quit_after_round: int) -> None:
+def play(gui: bool, force_quit_after_round: int, speed: float) -> None:
     board = RandomBoard()
     players: list[Player] = [
         RandomStrategy(),
         RandomStrategy(),
         RandomStrategy(),
     ]
-    Game(gui, force_quit_after_round, players, board).play()
+    Game(gui, force_quit_after_round, speed, players, board).play()
 
 
-def play_cli(force_quit_after_round: int) -> None:
+def play_cli(force_quit_after_round: int, speed: float) -> None:
     try:
-        play(gui=False, force_quit_after_round=force_quit_after_round)
+        play(gui=False, force_quit_after_round=force_quit_after_round, speed=speed)
     except:
         logger.print_all()
         raise
 
 
-def play_gui(force_quit_after_round: int) -> None:
-    play(gui=True, force_quit_after_round=force_quit_after_round)
+def play_gui(force_quit_after_round: int, speed: float) -> None:
+    play(gui=True, force_quit_after_round=force_quit_after_round, speed=speed)
