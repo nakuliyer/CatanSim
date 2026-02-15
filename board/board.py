@@ -4,11 +4,46 @@ from position import Position
 
 class Board:
     def __init__(self, tiles: list[list[Tile]]) -> None:
+        assert len(tiles) == 5, "Board must have 5 rows"
+        for i, row in enumerate(tiles):
+            assert len(row) == 5 - abs(i - 2), "Row {} must have {} tiles".format(
+                i, 5 - abs(i - 2)
+            )
+
         self.tiles: list[list[Tile]] = tiles
         self.positions: list[list[Position]] = []
-        self.set_up_positions()
 
-    def set_up_positions(self):
+        self._set_up_positions()
+
+    def __str__(self) -> str:
+        s = ""
+        for r, row in enumerate(self.tiles):
+            pad = " " * (abs(r - 2) * 2)
+            s += pad + " ".join(list(map(str, row))) + pad + "\n"
+        return s
+
+    def get_positions_owned_by_player(self, player_id: int) -> list[Position]:
+        return [
+            pos for row in self.positions for pos in row if player_id == pos.fixture
+        ]
+
+    def get_road_options(self, player_id: int) -> list[tuple[Position, str]]:
+        options = []
+        for row in self.positions:
+            for pos in row:
+                owns_road = (
+                    (pos.left_road == player_id)
+                    or (pos.right_road == player_id)
+                    or (pos.up_road == player_id)
+                    or (pos.down_road == player_id)
+                )
+                empty_road_names = pos.get_available_roads()
+                if owns_road:
+                    for road_name in empty_road_names:
+                        options.append((pos, road_name))
+        return options
+
+    def _set_up_positions(self) -> None:
         self.positions = [
             [Position(r, c) for c in range(j)]
             for r, j in [(0, 7), (1, 9), (2, 11), (3, 11), (4, 9), (5, 7)]
@@ -65,18 +100,3 @@ class Board:
         self.positions[5][3].adjacent_port = Port.WHEAT
         self.positions[5][5].adjacent_port = Port.THREE_ONE
         self.positions[5][6].adjacent_port = Port.THREE_ONE
-
-    def get_positions(self, owned_by_player: int = None):
-        return [
-            pos
-            for row in self.positions
-            for pos in row
-            if owned_by_player is None or owned_by_player == pos.fixture
-        ]
-
-    def __str__(self):
-        s = ""
-        for r, row in enumerate(self.tiles):
-            pad = " " * (abs(r - 2) * 2)
-            s += pad + " ".join(list(map(str, row))) + pad + "\n"
-        return s

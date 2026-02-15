@@ -62,7 +62,7 @@ class Position:
         if can_go(pos.down, pos.down_road):
             next_q.append(pos_path + [pos.down])
 
-    def get_empty_road_names(self):
+    def get_available_roads(self) -> List[str]:
         empty_road_names = ["left_road", "right_road", "up_road", "down_road"]
         road_to_dir = {
             "left_road": "left",
@@ -77,6 +77,24 @@ class Position:
             and getattr(self, road_to_dir[road_name]) is not None
         ]
         return empty_road_names
+
+    def build_road(self, road_name: str, player_id: int):
+        if road_name == "left_road":
+            assert self.left and self.left_road is None
+            self.left_road = player_id
+            self.left.right_road = player_id
+        elif road_name == "right_road":
+            assert self.right and self.right_road is None
+            self.right_road = player_id
+            self.right.left_road = player_id
+        elif road_name == "up_road":
+            assert self.up and self.up_road is None
+            self.up_road = player_id
+            self.up.down_road = player_id
+        elif road_name == "down_road":
+            assert self.down and self.down_road is None
+            self.down_road = player_id
+            self.down.up_road = player_id
 
     def can_settle(self):
         if self.fixture is None:

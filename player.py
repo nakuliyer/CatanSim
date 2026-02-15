@@ -1,3 +1,4 @@
+from copy import deepcopy
 import random
 from typing import List, Set, Tuple
 
@@ -182,7 +183,7 @@ class Player:
             )
 
     def collect_resources(self, board: Board, d6: int):
-        for pos in board.get_positions(owned_by_player=self.player_id):
+        for pos in board.get_positions_owned_by_player(self.player_id):
             for tile in pos.adjacent_tiles:
                 if tile.tile < 5 and tile.value == d6:
                     self.collect_resource_from_tile(tile, pos)
@@ -266,7 +267,7 @@ class Player:
                     or (pos.up_road == self.player_id)
                     or (pos.down_road == self.player_id)
                 )
-                empty_road_names = pos.get_empty_road_names()
+                empty_road_names = pos.get_available_roads()
                 if owns_road:
                     for road_name in empty_road_names:
                         options.append(
@@ -307,8 +308,10 @@ class Player:
             settlement_options = self.get_settlement_options(board)
             legal_actions += settlement_options
         if self.can_build_road():
-            road_options = self.get_road_options(board)
-            legal_actions += road_options
+            legal_actions += [
+                Action(Action.BUILD_ROAD, pos=pos, road_name=road_name)
+                for pos, road_name in board.get_road_options(self.player_id)
+            ]
         if self.can_build_city():
             city_options = self.get_city_options(board)
             legal_actions += city_options
@@ -352,8 +355,34 @@ class Player:
                         )
                     )
         if DevCard.ROADS in self.dev_cards:
-            # ROAD BUILDING REQUIRES THE STRATEGY TO MANUALLY DEFINE "place_second_dev_roads" to place the second road
-            legal_actions += self.get_road_options(board, Action.USE_DEV_ROADS)
+            if self.roads_remaining >= 1:
+                for first_pos, first_road_name in board.get_road_options(
+                    self.player_id
+                ):
+                    if self.roads_remaining >= 2:
+                        new_board = deepcopy(board)
+                        for second_pos, second_road_name in new_board.get_road_options(
+                            self.player_id
+                        ):
+                            legal_actions.append(
+                                Action(
+                                    Action.USE_DEV_ROADS,
+                                    first_pos=first_pos,
+                                    first_road_name=first_road_name,
+                                    second_pos=second_pos,
+                                    second_road_name=second_road_name,
+                                )
+                            )
+                    else:
+                        legal_actions.append(
+                            Action(
+                                Action.USE_DEV_ROADS,
+                                first_pos=first_pos,
+                                first_road_name=first_road_name,
+                                second_pos=None,
+                                second_road_name=None,
+                            )
+                        )
         return legal_actions
 
     def submit_action(
@@ -378,42 +407,25 @@ class Player:
                 self.resources[Tile.TREE] -= 1
                 self.resources[Tile.WHEAT] -= 1
                 self.resources[Tile.SHEEP] -= 1
-        elif action.action in (
-            Action.BUILD_ROAD_INIT,
-            Action.BUILD_ROAD,
-            Action.USE_DEV_ROADS,
-            Action.SECOND_USE_DEV_ROADS,
-        ):
+        elif action.action in (Action.BUILD_ROAD_INIT, Action.BUILD_ROAD):
             if self.roads_remaining == 0:
-                if action.action == Action.USE_DEV_ROADS:
-                    self.dev_cards.remove(DevCard.ROADS)
                 return
             self.roads_remaining -= 1
-            setattr(action.pos, action.road_name, self.player_id)
-            # set opposite direction from the other edge endpoint
-            road_to_dir = {
-                "left_road": "left",
-                "right_road": "right",
-                "up_road": "up",
-                "down_road": "down",
-            }
-            road_to_op = {
-                "left_road": "right_road",
-                "right_road": "left_road",
-                "up_road": "down_road",
-                "down_road": "up_road",
-            }
-            setattr(
-                getattr(action.pos, road_to_dir[action.road_name]),
-                road_to_op[action.road_name],
-                self.player_id,
-            )
+            action.pos.build_road(action.road_name, self.player_id)
             self.check_longest_road(board, stats)
             if action.action == Action.BUILD_ROAD:
                 self.resources[Tile.MUD] -= 1
                 self.resources[Tile.TREE] -= 1
-            if action.action == Action.USE_DEV_ROADS:
-                self.dev_cards.remove(DevCard.ROADS)
+        elif action.action == Action.USE_DEV_ROADS:
+            self.dev_cards.remove(DevCard.ROADS)
+            if self.roads_remaining == 0:
+                return
+            action.first_pos.build_road(action.first_road_name, self.player_id)
+            self.roads_remaining -= 1
+            if self.roads_remaining == 0:
+                return
+            action.second_pos.build_road(action.second_road_name, self.player_id)
+            self.roads_remaining -= 1
         elif action.action == Action.GET_DEV_CARD:
             self.resources[Tile.ROCK] -= 1
             self.resources[Tile.SHEEP] -= 1

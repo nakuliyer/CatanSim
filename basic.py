@@ -66,10 +66,9 @@ class Action:
     USE_DEV_ROADS = 10
     USE_YEAR_OF_PLENTY = 11
     TWO_TO_ONE = 12
-    SECOND_USE_DEV_ROADS = 13
-    ROB = 14
-    PROPOSE_TRADE = 15
-    TRADE = 16
+    ROB = 13
+    PROPOSE_TRADE = 14
+    TRADE = 15
 
     def __init__(self, action: int, **params):
         self.action = action

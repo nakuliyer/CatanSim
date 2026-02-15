@@ -42,12 +42,6 @@ class RandomStrategy(Player):
         robber_options = self.get_robber_options(board)
         return random.choice(robber_options)
 
-    def place_second_dev_roads(self, board: Board):
-        legal_roads = self.get_road_options(
-            board, action_type=Action.SECOND_USE_DEV_ROADS
-        )
-        return random.choice(legal_roads)
-
     def accepts_trade(self, propose_trade_action: Action) -> bool:
         # TODO: counter-offers?
         return random.random() < 0.5

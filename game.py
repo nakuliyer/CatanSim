@@ -65,14 +65,14 @@ def play(gui: bool, force_quit_after_round: int) -> None:
                     logger.info("Trade Denied")
             else:
                 players[turn].submit_action(action, board, players, stats, cards)
-            if action.action == Action.USE_DEV_ROADS:
-                players[turn].submit_action(
-                    players[turn].place_second_dev_roads(board),
-                    board,
-                    players,
-                    stats,
-                    cards,
-                )
+            # if action.action == Action.USE_DEV_ROADS:
+            #     players[turn].submit_action(
+            #         players[turn].place_second_dev_roads(board),
+            #         board,
+            #         players,
+            #         stats,
+            #         cards,
+            #     )
             action = players[turn].do(board, players, stats, cards)
         vps = players[turn].vps(board, stats)
         if vps >= 10:
