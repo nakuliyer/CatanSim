@@ -1,13 +1,14 @@
-
 import random
 from typing import List, Set, Tuple
+
 
 class GameStats:
     longest_road_count = 0
     longest_road_player = -1
     largest_army_count = 0
     largest_army_player = -1
-    
+
+
 class Port:
     WHEAT = 0
     TREE = 1
@@ -15,17 +16,10 @@ class Port:
     MUD = 3
     ROCK = 4
     THREE_ONE = 5
-    
+
     @staticmethod
     def to_name(port: int) -> str:
-        h = {
-            0: "WHEAT",
-            1: "TREE",
-            2: "SHEEP",
-            3: "MUD",
-            4: "ROCK",
-            5: "THREE TO ONE"
-        }
+        h = {0: "WHEAT", 1: "TREE", 2: "SHEEP", 3: "MUD", 4: "ROCK", 5: "THREE TO ONE"}
         return h[port]
 
 
@@ -53,16 +47,10 @@ class Tile:
 
     @staticmethod
     def to_name(resource: int) -> str:
-        h = {
-            0: "WHEAT",
-            1: "TREE",
-            2: "SHEEP",
-            3: "MUD",
-            4: "ROCK",
-            5: "DESERT"
-        }
+        h = {0: "WHEAT", 1: "TREE", 2: "SHEEP", 3: "MUD", 4: "ROCK", 5: "DESERT"}
         return h[resource]
-    
+
+
 class Action:
     DO_NOTHING = -1
     GET_DEV_CARD = 0
@@ -82,12 +70,12 @@ class Action:
     ROB = 14
     PROPOSE_TRADE = 15
     TRADE = 16
-    
+
     def __init__(self, action: int, **params):
         self.action = action
         self.params = params
         self.__dict__.update(params)
-        
+
     def clean_params(self):
         # just here for pretty-ish printing
         h = {}
@@ -99,11 +87,16 @@ class Action:
             else:
                 h[param] = self.params[param]
         return ", ".join(["{}={}".format(k, v) for k, v in h.items()])
-        
+
     def __repr__(self) -> str:
-        h = {v: k for k, v in Action.__dict__.items() if not k.startswith('__') and not callable(k)}
+        h = {
+            v: k
+            for k, v in Action.__dict__.items()
+            if not k.startswith("__") and not callable(k)
+        }
         return "{}[{}]".format(h[self.action], self.clean_params())
-    
+
+
 class DevCard:
     KNIGHT = 0
     VP = 1
@@ -111,7 +104,7 @@ class DevCard:
     PLENTY = 3
     MONOPOLY = 4
     NO_OP = 5
-    
+
     @staticmethod
     def to_name(card: int) -> str:
         h = {
@@ -120,14 +113,17 @@ class DevCard:
             2: "BUILD ROADS",
             3: "YEAR OF PLENTY",
             4: "MONOPOLY",
-            5: "NO OP"
+            5: "NO OP",
         }
         return h[card]
-    
+
     @staticmethod
     def to_names(list_of_cards: List[int]) -> str:
-        return "[{}]".format(", ".join(map(DevCard.to_name, filter(lambda x: x != 5, list_of_cards))))
-    
+        return "[{}]".format(
+            ", ".join(map(DevCard.to_name, filter(lambda x: x != 5, list_of_cards)))
+        )
+
+
 class DevCardPile:
     def __init__(self):
         self.pile = [
@@ -139,31 +135,8 @@ class DevCardPile:
         ]
         self.pile = [item for row in self.pile for item in row]
         random.shuffle(self.pile)
-        
+
     def draw_top(self):
         if len(self.pile):
             return self.pile.pop(0)
         return DevCard.NO_OP
-
-
-class Messages:
-    def __init__(self, verbosity: int):
-        self.messages: List[Tuple[str, int]] = []
-        self.verbosity = verbosity
-
-    def add(self, message: str, level: int = 0):
-        # Level 0 is most important (Game Winning)
-        # Level 1 is verbose (Most Game Updates, e.g. Settling, Developing)
-        # Level 2 is general (Collected Resources)
-        # Level 3 is for reccuring resource info, turn info, etc
-        self.messages.append((message, level))
-        
-    def print_all(self):
-        for message, level in self.messages:
-            if level <= self.verbosity:
-                if level == 3:
-                    print("===\n{}\n===".format(message))
-                else:
-                    print(message)
-        print("\n\n")
-        self.messages = []

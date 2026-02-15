@@ -5,6 +5,7 @@ import numpy as np
 from basic import Tile, Port
 from position import Position
 
+
 class Board:
     def __init__(self):
         self.tiles: List[List[Tile]] = []
@@ -43,7 +44,7 @@ class Board:
                 row = []
                 r += 1
                 c = 0
-                
+
     def can_settle(self, pos: Position) -> bool:
         if pos.fixture is None:
             for adj in pos.adjacent_pos():
@@ -109,7 +110,7 @@ class Board:
         self.positions[5][3].adjacent_port = Port.WHEAT
         self.positions[5][5].adjacent_port = Port.THREE_ONE
         self.positions[5][6].adjacent_port = Port.THREE_ONE
-        
+
     def get_positions(self, owned_by_player: int = None):
         return [
             pos

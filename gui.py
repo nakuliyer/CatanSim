@@ -13,30 +13,28 @@ SCREEN_HEIGHT = 360
 LEFT_CORNER = (50, 50)
 
 RESOURCE_COLORS = {
-    0: (255,255,153),
+    0: (255, 255, 153),
     1: (0, 255, 0),
     2: (34, 139, 34),
     3: (165, 42, 42),
     4: (100, 100, 100),
-    5: (255, 255, 255)
+    5: (255, 255, 255),
 }
 
-PLAYER_COLORS = {
-    1: (255, 255, 255),
-    2: (255, 0, 0),
-    3: (0, 0, 255)
-}
+PLAYER_COLORS = {1: (255, 255, 255), 2: (255, 0, 0), 3: (0, 0, 255)}
 
 root: Optional[pygame.Surface] = None
 big_text: Optional[pygame.font.Font] = None
+
 
 def init_gui() -> None:
     global root, big_text
     pygame.init()
     pygame.font.init()
-    big_text = pygame.font.SysFont('Helvetica', 16)
+    big_text = pygame.font.SysFont("Helvetica", 16)
     root = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    
+
+
 def draw_regular_polygon(
     surface: pygame.Surface,
     color,
@@ -56,13 +54,15 @@ def draw_regular_polygon(
         ],
         width,
     )
-    
+
+
 def quit_gui() -> None:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             raise SystemExit
-            
+
+
 def write(s: str, pos: Tuple[int, int]) -> None:
     if not root or not big_text:
         return
@@ -71,7 +71,8 @@ def write(s: str, pos: Tuple[int, int]) -> None:
     temp_surface.fill((0, 0, 0))
     temp_surface.blit(text, (0, 0))
     root.blit(temp_surface, pos)
-    
+
+
 def draw_gui(board: Board, players: List[Player]) -> None:
     if not root:
         return

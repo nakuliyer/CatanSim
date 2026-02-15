@@ -1,15 +1,15 @@
 import random
 from typing import List, Set, Tuple
 
-from basic import Port, Tile, GameStats, Action, DevCard, DevCardPile, Messages
+from basic import Port, Tile, GameStats, Action, DevCard, DevCardPile
 from board import Board
 from position import Position
+import logger
 
 
 class Player:
-    def __init__(self, player_id: int, messages: Messages, **params):
+    def __init__(self, player_id: int, **params):
         self.player_id = player_id
-        self.messages = messages
         self.resources = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
         self.roads_remaining = 15
         self.settlements_remaining = 5
@@ -40,7 +40,7 @@ class Player:
 
     def has_resource(self, resource: int) -> bool:
         return self.resources[resource] > 0
-    
+
     def has_any_resource(self) -> bool:
         return any(map(self.has_resource, self.resources))
 
@@ -64,7 +64,7 @@ class Player:
         self.resources = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
         for card in resource_cards:
             self.resources[card] += 1
-            
+
     def turn_ended(self):
         self.dev_cards += self.unusable_dev_cards
         self.unusable_dev_cards = []
@@ -96,11 +96,10 @@ class Player:
         if max_road_size > stats.longest_road_count and max_road_size >= 5:
             stats.longest_road_count = max_road_size
             stats.longest_road_player = self.player_id
-            self.messages.add(
+            logger.info(
                 "Player {} now has plaque for longest road of size {}".format(
                     self.player_id, max_road_size
-                ),
-                1,
+                )
             )
         self.longest_road_length = max_road_size
 
@@ -136,11 +135,9 @@ class Player:
                         sources["num_settlements"] += 1
                     else:
                         sources["num_cities"] += 1
-        self.messages.add(
-            "Player {} has {} VPs: {}".format(self.player_id, vp, sources), 2
-        )
+        logger.debug("Player {} has {} VPs: {}".format(self.player_id, vp, sources))
         return vp
-    
+
     def check_all_ok(self):
         for res in self.resources:
             if self.resources[res] < 0:
@@ -151,11 +148,11 @@ class Player:
             raise ValueError("Cannot build too many settlements")
         if self.cities_remaining < 0:
             raise ValueError("Cannot build too many cities")
-    
+
     ################################
     # Collecting Resources Methods #
     ################################
-    
+
     def on_7_roll(self):
         resource_cards = self.get_resource_cards()
         if len(resource_cards) > 7:
@@ -166,24 +163,22 @@ class Player:
             )
             resource_cards = random.sample(resource_cards, cards_after_halving)
             self.set_resource_cards(resource_cards)
-            
+
     def collect_resource_from_tile(self, tile: Tile, pos: Position):
         if tile.has_knight:
-            self.messages.add(
+            logger.debug(
                 "Player {} could NOT collect anything due to knight".format(
                     self.player_id
                 ),
-                2,
             )
         else:
             self.resources[tile.tile] += pos.fixture_type + 1
-            self.messages.add(
+            logger.debug(
                 "Player {} collects {} {}".format(
                     self.player_id,
                     pos.fixture_type + 1,
                     Tile.to_name(tile.tile),
                 ),
-                2,
             )
 
     def collect_resources(self, board: Board, d6: int):
@@ -191,17 +186,17 @@ class Player:
             for tile in pos.adjacent_tiles:
                 if tile.tile < 5 and tile.value == d6:
                     self.collect_resource_from_tile(tile, pos)
-    
+
     def handle_dice_roll(self, board: Board, d6: int):
         if d6 == 7:
             self.on_7_roll()
         else:
             self.collect_resources(board, d6)
-            
+
     #################################
     # Building Capabilities Methods #
     #################################
-    
+
     def can_build_dev_card(self):
         return (
             self.has_resource(Tile.ROCK)
@@ -231,7 +226,7 @@ class Player:
             and self.resources[Tile.WHEAT] >= 2
             and self.cities_remaining
         )
-        
+
     #########################
     # Legal Actions Methods #
     #########################
@@ -260,9 +255,7 @@ class Player:
         return options
 
     def get_road_options(
-        self,
-        board: Board,
-        action_type: int = Action.BUILD_ROAD
+        self, board: Board, action_type: int = Action.BUILD_ROAD
     ) -> List[Action]:
         options = []
         for row in board.positions:
@@ -276,7 +269,9 @@ class Player:
                 empty_road_names = pos.get_empty_road_names()
                 if owns_road:
                     for road_name in empty_road_names:
-                        options.append(Action(action_type, pos=pos, road_name=road_name))
+                        options.append(
+                            Action(action_type, pos=pos, road_name=road_name)
+                        )
         return options
 
     def get_knight_options(
@@ -369,7 +364,7 @@ class Player:
         stats: GameStats,
         dev_cards: DevCardPile,
     ) -> Action:
-        self.messages.add("Player {} did {}".format(self.player_id, action), 1)
+        logger.info("Player {} did {}".format(self.player_id, action))
         if action.action in (Action.SETTLE_INIT, Action.SETTLE):
             self.settlements_remaining -= 1
             action.pos.fixture = self.player_id
@@ -425,7 +420,9 @@ class Player:
             self.resources[Tile.WHEAT] -= 1
             card = dev_cards.draw_top()
             self.unusable_dev_cards.append(card)
-            self.messages.add("Player {} got card {}".format(self.player_id, DevCard.to_name(card)))
+            logger.info(
+                "Player {} got card {}".format(self.player_id, DevCard.to_name(card))
+            )
         elif action.action == Action.BUILD_CITY:
             self.cities_remaining -= 1
             self.settlements_remaining += 1
@@ -460,20 +457,25 @@ class Player:
                     )
                     player_to_steal_from.set_resource_cards(op_resource_cards)
                     self.resources[stolen_card] += 1
-                    self.messages.add(
-                        "Player {} stole a {} from Player {}".format(
-                            self.player_id,
-                            Tile.to_name(stolen_card),
-                            player_to_steal_from.player_id,
-                        ),
-                        1,
-                    )
+                    if logger.verbosity == 3:
+                        logger.info(
+                            "Player {} stole a {} from Player {}".format(
+                                self.player_id,
+                                Tile.to_name(stolen_card),
+                                player_to_steal_from.player_id,
+                            )
+                        )
+                    else:
+                        logger.info(
+                            "Player {} stole a resource from Player {}".format(
+                                self.player_id, player_to_steal_from.player_id
+                            )
+                        )
                 else:
-                    self.messages.add(
+                    logger.info(
                         "Player {} tried to steal from Player {}, but nothing to steal".format(
                             self.player_id, player_to_steal_from.player_id
-                        ),
-                        1,
+                        )
                     )
             self.check_largest_army(stats)
         elif action.action == Action.USE_MONOPOLY:
@@ -483,13 +485,12 @@ class Player:
                 stealing = player_to_steal_from.resources[action.resource]
                 player_to_steal_from.resources[action.resource] = 0
                 total += stealing
-                self.messages.add(
+                logger.info(
                     "Stole {} {} from Player {} with Monopoly".format(
                         stealing,
                         Tile.to_name(action.resource),
                         player_to_steal_from.player_id,
-                    ),
-                    1,
+                    )
                 )
             self.resources[action.resource] = total
         elif action.action == Action.USE_YEAR_OF_PLENTY:
