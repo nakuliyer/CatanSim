@@ -67,7 +67,6 @@ class RandomStrategy(Player):
     def do(
         self,
         board: Board,
-        players: List["Player"],
         stats: GameStats,
         dev_cards: DevCardPile,
     ) -> Action:
@@ -80,9 +79,7 @@ class RandomStrategy(Player):
             # do nothing chance
             return Action(Action.DO_NOTHING)
         elif (len(legal_actions) and r < 0.5) or (not len(legal_actions)):
-            # propose trade
-            # random strategy prefers trading lower number of cards (hence ^3 factor in random.random)
-            # but still makes random trades and accepts trades with a 1/2 chance
+            # propose trade chance
             if not self.has_any_resource():
                 return Action(Action.DO_NOTHING)
             cards = self.get_resource_cards()
@@ -91,22 +88,6 @@ class RandomStrategy(Player):
             cards_to_give = random.sample(cards, num_of_cards_to_give)
             num_cards_wanted = random.randint(1, 3)
             cards_wanted = random.choices([0, 1, 2, 3, 4], k=num_cards_wanted)
-            # trades_avail = []
-            # for player in players:
-            #     if player.player_id == self.player_id:
-            #         continue
-            #     other_cards = player.get_resource_cards()
-            #     if len(other_cards) == 0:
-            #         continue
-            #     num_of_cards_to_take = int(
-            #         (random.random() ** 3) * len(other_cards) + 1
-            #     )
-            #     trades_avail.append(
-            #         (player.player_id, random.sample(other_cards, num_of_cards_to_take))
-            #     )
-            # if not len(trades_avail):
-            #     return Action(Action.DO_NOTHING)
-            # other_player_id, cards_to_take = random.choice(trades_avail)
             action = Action(
                 Action.PROPOSE_TRADE,
                 # with_player=other_player_id,
@@ -115,4 +96,5 @@ class RandomStrategy(Player):
             )
             return action
         else:
+            # do something else
             return random.choice(legal_actions)

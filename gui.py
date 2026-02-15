@@ -20,7 +20,20 @@ RESOURCE_COLORS = {
     5: (255, 255, 255),
 }
 
-PLAYER_COLORS = {1: (255, 255, 255), 2: (255, 0, 0), 3: (0, 0, 255)}
+PLAYER_COLORS = {
+    # red
+    0: (255, 0, 0),
+    # blue
+    1: (0, 0, 255),
+    # orange
+    2: (255, 165, 0),
+    # white
+    3: (255, 255, 255),
+    # green
+    4: (0, 255, 0),
+    # black
+    5: (0, 0, 0),
+}
 
 root: Optional[pygame.Surface] = None
 big_text: Optional[pygame.font.Font] = None

@@ -11,19 +11,30 @@ from board.position import Position
 import logger
 
 
+colors = ["red", "blue", "orange", "white", "green", "black"]
+
+
 class Player(ABC):
-    def __init__(self, player_id: int, **params):
-        self.player_id = player_id
-        self.resources = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
+    # Class variable to keep track of number of players created, used for assigning player IDs and colors
+    num_players = 0
+
+    def __init__(self):
+        # Public attributes
+        self.player_id = Player.num_players
+        Player.num_players += 1
+        assert self.player_id in range(6)
+        self.color = colors[self.player_id]
         self.roads_remaining = 15
         self.settlements_remaining = 5
         self.cities_remaining = 4
-        self.dev_cards: List[int] = []
-        self.unusable_dev_cards: List[int] = []
         self.knights_played = 0
         self.controlled_ports: Set[int] = set()
         self.longest_road_length = 1
-        self.__dict__.update(params)
+
+        # Private attributes between game and player
+        self.resources = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
+        self.dev_cards: List[int] = []
+        self.unusable_dev_cards: List[int] = []  # Need to wait a turn before using
 
     ###################
     # General Methods #
@@ -31,7 +42,7 @@ class Player(ABC):
 
     def __str__(self):
         return "Player {} (\n\tresources={},\n\troads_remaining={},\n\tsettlements_remaining={},\n\tcities_remaining={},\n\tdev_cards={},\n\tknights_played={},\n\tcontrolled_ports={},\n\tlongest_road_length={})".format(
-            self.player_id,
+            self.color,
             {Tile.to_name(k): v for k, v in self.resources.items()},
             self.roads_remaining,
             self.settlements_remaining,
@@ -103,7 +114,6 @@ class Player(ABC):
     def do(
         self,
         board: Board,
-        players: List["Player"],
         stats: GameStats,
         dev_cards: DevCardPile,
     ) -> Action:
@@ -138,7 +148,7 @@ class Player(ABC):
             stats.longest_road_player = self.player_id
             logger.game(
                 "Player {} now has plaque for longest road of size {}".format(
-                    self.player_id, max_road_size
+                    self.color, max_road_size
                 )
             )
         self.longest_road_length = max_road_size
@@ -175,7 +185,7 @@ class Player(ABC):
                         sources["num_settlements"] += 1
                     else:
                         sources["num_cities"] += 1
-        logger.debug("Player {} has {} VPs: {}".format(self.player_id, vp, sources))
+        logger.debug("Player {} has {} VPs: {}".format(self.color, vp, sources))
         return vp
 
     def check_all_ok(self):
@@ -208,15 +218,13 @@ class Player(ABC):
     def collect_resource_from_tile(self, tile: Tile, pos: Position):
         if tile.has_knight:
             logger.debug(
-                "Player {} could NOT collect anything due to knight".format(
-                    self.player_id
-                ),
+                "Player {} could NOT collect anything due to knight".format(self.color),
             )
         else:
             self.resources[tile.tile] += pos.fixture_score
             logger.debug(
                 "Player {} collects {} {}".format(
-                    self.player_id,
+                    self.color,
                     pos.fixture_score,
                     Tile.to_name(tile.tile),
                 ),
@@ -409,7 +417,7 @@ class Player(ABC):
         stats: GameStats,
         dev_cards: DevCardPile,
     ) -> None:
-        logger.game("Player {} did {}".format(self.player_id, action))
+        logger.game("Player {} did {}".format(self.color, action))
         if action.action in (Action.SETTLE_INIT, Action.SETTLE):
             self.settlements_remaining -= 1
             pos_tuple: tuple[int, int] = action.params["pos"]
@@ -460,7 +468,7 @@ class Player(ABC):
             card = dev_cards.draw_top()
             self.unusable_dev_cards.append(card)
             logger.debug(
-                "Player {} got card {}".format(self.player_id, DevCard.to_name(card))
+                "Player {} got card {}".format(self.color, DevCard.to_name(card))
             )
         elif action.action == Action.BUILD_CITY:
             self.cities_remaining -= 1
@@ -509,20 +517,20 @@ class Player(ABC):
                     self.resources[stolen_card] += 1
                     logger.debug(
                         "Player {} stole a {} from Player {}".format(
-                            self.player_id,
+                            self.color,
                             Tile.to_name(stolen_card),
-                            player_to_steal_from.player_id,
+                            player_to_steal_from.color,
                         )
                     )
                     logger.game(
                         "Player {} stole a resource from Player {}".format(
-                            self.player_id, player_to_steal_from.player_id
+                            self.color, player_to_steal_from.color
                         )
                     )
                 else:
                     logger.game(
                         "Player {} tried to steal from Player {}, but nothing to steal".format(
-                            self.player_id, player_to_steal_from.player_id
+                            self.color, player_to_steal_from.color
                         )
                     )
             self.check_largest_army(stats)
@@ -538,7 +546,7 @@ class Player(ABC):
                     "Stole {} {} from Player {} with Monopoly".format(
                         stealing,
                         Tile.to_name(resource),
-                        player_to_steal_from.player_id,
+                        player_to_steal_from.color,
                     )
                 )
             self.resources[resource] = total
