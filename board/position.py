@@ -1,6 +1,7 @@
 from typing import List, Optional
 
-from basic import Tile, Port
+from basic_old import Tile, Port
+import logger
 
 
 class Position:
@@ -22,12 +23,18 @@ class Position:
         self.right = right
         self.up = up
         self.down = down
-        self.left_road = None  # player who owns
-        self.right_road = None  # player who owns
-        self.up_road = None  # player who owns
-        self.down_road = None  # player who owns
-        self.fixture = None  # player who owns
-        self.fixture_type = None  # 0 for house, 1 for city
+        self.left_road: int | None = None  # player who owns
+        self.right_road: int | None = None  # player who owns
+        self.up_road: int | None = None  # player who owns
+        self.down_road: int | None = None  # player who owns
+        self.fixture: int | None = None  # player who owns
+        self.fixture_type: int | None = None  # 0 for house, 1 for city
+
+    @property
+    def fixture_score(self) -> int:
+        if self.fixture_type is not None:
+            return self.fixture_type + 1
+        return 0
 
     def adjacent_pos(self):
         adj = []

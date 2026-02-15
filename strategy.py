@@ -1,7 +1,8 @@
 import random
 from typing import List
 
-from basic import Action, GameStats, DevCardPile
+from basic_old import GameStats, DevCardPile
+from basic import Action
 from board import Board
 from player import Player
 import logger
@@ -34,9 +35,15 @@ class RandomStrategy(Player):
                                     tile.tile
                                 ] += 1  # collect initial resources
                     return [
-                        Action(Action.SETTLE_INIT, pos=pos),
-                        Action(Action.BUILD_ROAD_INIT, pos=pos, road_name=road_name),
+                        Action(Action.SETTLE_INIT, pos=pos.pos),
+                        Action(
+                            Action.BUILD_ROAD_INIT, pos=pos.pos, road_name=road_name
+                        ),
                     ]
+
+    def discard_cards(self, num_to_discard: int) -> List[int]:
+        cards = self.get_resource_cards()
+        return random.sample(range(len(cards)), num_to_discard)
 
     def choose_robber_action(self, board: Board) -> Action:
         robber_options = self.get_robber_options(board)
@@ -53,7 +60,7 @@ class RandomStrategy(Player):
         stats: GameStats,
         dev_cards: DevCardPile,
     ) -> Action:
-        legal_actions = self.get_legal_actions(board)
+        legal_actions = self.get_legal_actions(board, dev_cards)
         logger.debug(
             "Player {} has legal actions {}".format(self.player_id, legal_actions)
         )

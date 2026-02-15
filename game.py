@@ -1,7 +1,8 @@
 import random
 import time
 
-from basic import DevCardPile, GameStats, Action
+from basic_old import DevCardPile, GameStats
+from basic import Action
 from board import RandomBoard
 from strategy import RandomStrategy
 from player import Player
@@ -22,7 +23,7 @@ def play(gui: bool, force_quit_after_round: int) -> None:
     logger.info("Board is\n{}".format(board))
     cards = DevCardPile()
     stats = GameStats()
-    players = [
+    players: list[Player] = [
         RandomStrategy(1),
         RandomStrategy(2),
         RandomStrategy(3),
@@ -55,9 +56,9 @@ def play(gui: bool, force_quit_after_round: int) -> None:
                         players[turn].player_id, action
                     )
                 )
-                if Player.get_player_by_id(players, action.with_player).accepts_trade(
-                    action
-                ):
+                if Player.get_player_by_id(
+                    players, action.params["with_player"]
+                ).accepts_trade(action):
                     logger.info("Trade Accepted")
                     action.action = Action.TRADE
                     players[turn].submit_action(action, board, players, stats, cards)
@@ -65,18 +66,10 @@ def play(gui: bool, force_quit_after_round: int) -> None:
                     logger.info("Trade Denied")
             else:
                 players[turn].submit_action(action, board, players, stats, cards)
-            # if action.action == Action.USE_DEV_ROADS:
-            #     players[turn].submit_action(
-            #         players[turn].place_second_dev_roads(board),
-            #         board,
-            #         players,
-            #         stats,
-            #         cards,
-            #     )
             action = players[turn].do(board, players, stats, cards)
         vps = players[turn].vps(board, stats)
         if vps >= 10:
-            logger.info("Player {} won!".format(players[turn].player_id))
+            logger.critical("Player {} won!".format(players[turn].player_id))
             gg = True
         if gui:
             draw_gui(board, players)
@@ -90,7 +83,8 @@ def play(gui: bool, force_quit_after_round: int) -> None:
             player.check_all_ok()
             player.turn_ended()
         logger.info("\n".join([str(player) for player in players]))
-        print(logger.flush())
+        logger.print_all()
+        logger.flush()
     if gui:
         while True:
             quit_gui()

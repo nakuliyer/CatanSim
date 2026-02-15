@@ -2,26 +2,50 @@
 verbosity = -1
 
 # Static global verbosity levels
-SILENT = 0
-ERROR = 1
-INFO = 2
-DEBUG = 3
+CRITICAL = 0
+INFO = 1
+DEBUG = 2
 
+
+class Message:
+    def __init__(self, message: str, level: int):
+        self.message = message
+        self.level = level
+
+
+# Static global message log
 messages = []
 
 
 def log(message, level=INFO) -> None:
     """Log a message with a given verbosity level."""
     if level <= verbosity:
-        messages.append(message)
+        messages.append(Message(message, level))
 
 
-def flush() -> list[str]:
-    """Print all logged messages and clear the log."""
+def print_all() -> None:
+    """Print all logged messages without clearing the log."""
+    if not messages:
+        return
+
+    def level_to_prefix(level):
+        if level == CRITICAL:
+            return "[CRTICAL] "
+        if level == INFO:
+            return "[INFO] "
+        elif level == DEBUG:
+            return "[DEBUG] "
+
+    output = "\n".join(
+        [f"{level_to_prefix(msg.level)}{msg.message}" for msg in messages]
+    )
+    print(output)
+
+
+def flush():
+    """Clear the log."""
     global messages
-    output = "\n".join(messages)
     messages = []
-    return output
 
 
 def set_verbosity(level):
@@ -30,14 +54,9 @@ def set_verbosity(level):
     verbosity = level
 
 
-def silent(message):
-    """Log a silent message."""
-    log(message, SILENT)
-
-
-def error(message):
-    """Log an error message."""
-    log(message, ERROR)
+def critical(message):
+    """Log a critical message."""
+    log(message, CRITICAL)
 
 
 def info(message):

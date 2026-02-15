@@ -1,3 +1,4 @@
+from itertools import chain
 import random
 from typing import List, Set, Tuple
 
@@ -51,49 +52,49 @@ class Tile:
         return h[resource]
 
 
-class Action:
-    DO_NOTHING = -1
-    GET_DEV_CARD = 0
-    SETTLE_INIT = 1
-    BUILD_CITY = 2
-    BUILD_ROAD_INIT = 3
-    FOUR_TO_ONE = 4
-    THREE_TO_ONE = 5
-    SETTLE = 6
-    BUILD_ROAD = 7
-    USE_KNIGHT = 8
-    USE_MONOPOLY = 9
-    USE_DEV_ROADS = 10
-    USE_YEAR_OF_PLENTY = 11
-    TWO_TO_ONE = 12
-    ROB = 13
-    PROPOSE_TRADE = 14
-    TRADE = 15
+# class Action:
+#     DO_NOTHING = -1
+#     GET_DEV_CARD = 0
+#     SETTLE_INIT = 1
+#     BUILD_CITY = 2
+#     BUILD_ROAD_INIT = 3
+#     FOUR_TO_ONE = 4
+#     THREE_TO_ONE = 5
+#     SETTLE = 6
+#     BUILD_ROAD = 7
+#     USE_KNIGHT = 8
+#     USE_MONOPOLY = 9
+#     USE_DEV_ROADS = 10
+#     USE_YEAR_OF_PLENTY = 11
+#     TWO_TO_ONE = 12
+#     ROB = 13
+#     PROPOSE_TRADE = 14
+#     TRADE = 15
 
-    def __init__(self, action: int, **params):
-        self.action = action
-        self.params = params
-        self.__dict__.update(params)
+#     def __init__(self, action: int, **params):
+#         self.action = action
+#         self.params = params
+#         self.__dict__.update(params)
 
-    def clean_params(self):
-        # just here for pretty-ish printing
-        h = {}
-        for param in self.params:
-            if param == "source" or param == "dest" or param.startswith("resource"):
-                h[param] = Tile.to_name(self.params[param])
-            elif param == "mine" or param == "theirs":
-                h[param] = list(map(Tile.to_name, self.params[param]))
-            else:
-                h[param] = self.params[param]
-        return ", ".join(["{}={}".format(k, v) for k, v in h.items()])
+#     def clean_params(self):
+#         # just here for pretty-ish printing
+#         h = {}
+#         for param in self.params:
+#             if param == "source" or param == "dest" or param.startswith("resource"):
+#                 h[param] = Tile.to_name(self.params[param])
+#             elif param == "mine" or param == "theirs":
+#                 h[param] = list(map(Tile.to_name, self.params[param]))
+#             else:
+#                 h[param] = self.params[param]
+#         return ", ".join(["{}={}".format(k, v) for k, v in h.items()])
 
-    def __repr__(self) -> str:
-        h = {
-            v: k
-            for k, v in Action.__dict__.items()
-            if not k.startswith("__") and not callable(k)
-        }
-        return "{}[{}]".format(h[self.action], self.clean_params())
+#     def __repr__(self) -> str:
+#         h = {
+#             v: k
+#             for k, v in Action.__dict__.items()
+#             if not k.startswith("__") and not callable(k)
+#         }
+#         return "{}[{}]".format(h[self.action], self.clean_params())
 
 
 class DevCard:
@@ -125,17 +126,21 @@ class DevCard:
 
 class DevCardPile:
     def __init__(self):
-        self.pile = [
-            [DevCard.KNIGHT] * 14,
-            [DevCard.VP] * 5,
-            [DevCard.ROADS] * 2,
-            [DevCard.PLENTY] * 2,
-            [DevCard.MONOPOLY] * 2,
-        ]
-        self.pile = [item for row in self.pile for item in row]
+        self.pile: list[int] = list(
+            chain(
+                [DevCard.KNIGHT] * 14,
+                [DevCard.VP] * 5,
+                [DevCard.ROADS] * 2,
+                [DevCard.PLENTY] * 2,
+                [DevCard.MONOPOLY] * 2,
+            )
+        )
         random.shuffle(self.pile)
 
-    def draw_top(self):
+    def has_cards(self) -> bool:
+        return len(self.pile) > 0
+
+    def draw_top(self) -> int:
         if len(self.pile):
             return self.pile.pop(0)
-        return DevCard.NO_OP
+        raise ValueError("No more dev cards left in pile")

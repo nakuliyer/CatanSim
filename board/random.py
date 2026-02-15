@@ -1,9 +1,9 @@
 import numpy as np
 from itertools import chain
 
-from .board import Board
+from basic_old import Tile
 
-from basic import Tile
+from .board import Board
 
 
 class RandomBoard(Board):
@@ -12,15 +12,16 @@ class RandomBoard(Board):
 
     @staticmethod
     def _generate() -> list[list[Tile]]:
-        tiles = chain(
-            [Tile.WHEAT] * 4,
-            [Tile.TREE] * 4,
-            [Tile.SHEEP] * 4,
-            [Tile.MUD] * 3,
-            [Tile.ROCK] * 3,
-            [Tile.DESERT],
+        tiles = list(
+            chain(
+                [Tile.WHEAT] * 4,
+                [Tile.TREE] * 4,
+                [Tile.SHEEP] * 4,
+                [Tile.MUD] * 3,
+                [Tile.ROCK] * 3,
+                [Tile.DESERT],
+            )
         )
-        tiles = list(tiles)
         nums = [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12]
         r = 0
         c = 0

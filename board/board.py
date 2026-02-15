@@ -1,5 +1,6 @@
-from basic import Tile, Port
-from position import Position
+from basic_old import Tile, Port
+
+from .position import Position
 
 
 class Board:
@@ -22,13 +23,21 @@ class Board:
             s += pad + " ".join(list(map(str, row))) + pad + "\n"
         return s
 
+    def get_position(self, pos: tuple[int, int]) -> Position:
+        r, c = pos
+        return self.positions[r][c]
+
+    def get_tile(self, pos: tuple[int, int]) -> Tile:
+        r, c = pos
+        return self.tiles[r][c]
+
     def get_positions_owned_by_player(self, player_id: int) -> list[Position]:
         return [
             pos for row in self.positions for pos in row if player_id == pos.fixture
         ]
 
     def get_road_options(self, player_id: int) -> list[tuple[Position, str]]:
-        options = []
+        options: list[tuple[Position, str]] = []
         for row in self.positions:
             for pos in row:
                 owns_road = (
@@ -42,6 +51,19 @@ class Board:
                     for road_name in empty_road_names:
                         options.append((pos, road_name))
         return options
+
+    def get_knight_options(self, player_id: int) -> list[tuple[Tile, int | None]]:
+        knight_options: list[tuple[Tile, int | None]] = []
+        for row in self.tiles:
+            for tile in row:
+                if not tile.has_knight and not tile.tile == Tile.DESERT:
+                    if len(tile.owning_player_ids):
+                        for other_player_id in tile.owning_player_ids:
+                            if other_player_id != player_id:
+                                knight_options.append((tile, other_player_id))
+                    else:
+                        knight_options.append((tile, None))
+        return knight_options
 
     def _set_up_positions(self) -> None:
         self.positions = [

@@ -1,3 +1,4 @@
 __pycache__
 strategies_old.py
 *.txt
+.DS_Store
