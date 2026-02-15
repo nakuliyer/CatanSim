@@ -1,11 +1,10 @@
 import random
 import time
 
-from basic_old import DevCardPile, GameStats
-from basic import Action
+from basic import Action, DevCardPile, GameStats
 from board import Board, RandomBoard, board
 from strategy import Player, RandomStrategy
-from gui import init_gui, draw_gui, quit_gui
+from gui import init_gui, draw_gui, quit_gui, add_messages
 import logger
 
 
@@ -37,10 +36,16 @@ class Game:
         for second in [False, True]:
             order = -1 if second else 1
             for player in self.players[::order]:
+                if self.gui:
+                    quit_gui()
                 for action in player.settle(self.board, second):
                     player.submit_action(
                         action, self.board, self.players, self.stats, self.cards
                     )
+                    if self.gui:
+                        self.write()
+                        draw_gui(self.board)
+                time.sleep(1 / self.speed)
         for player in self.players:
             logger.debug(player)
 
@@ -107,6 +112,7 @@ class Game:
                 )
             action = self.players[turn].do(self.board, self.stats, self.cards)
         if self.gui:
+            self.write()
             draw_gui(self.board)
         time.sleep(1 / self.speed)
         for player in self.players:
@@ -117,12 +123,8 @@ class Game:
         vps = self.players[turn].vps(self.board, self.stats)
         if vps >= 10:
             logger.game("Player {} won!".format(self.players[turn].color))
-            logger.print_all()
-            logger.flush()
             return False
         else:
-            logger.print_all()
-            logger.flush()
             return True
 
     def post_game(self) -> None:
@@ -132,17 +134,26 @@ class Game:
                 quit_gui()
                 draw_gui(self.board)
 
+    def write(self) -> None:
+        if self.gui:
+            add_messages(logger.messages)
+        else:
+            logger.print_all()
+            logger.flush()
+
     def play(self) -> None:
         try:
             self.init_game()
             rnd = 0
             turn = 0
             while self.game_loop(turn):
+                self.write()
                 turn = (turn + 1) % len(self.players)
                 if turn == 0:
                     rnd += 1
                 if rnd >= self.force_quit_after_round:
                     raise ValueError("Game Lasted Too Long")
+            self.write()
             self.post_game()
         except:
             logger.game("Game crashed")

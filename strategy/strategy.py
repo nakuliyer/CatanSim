@@ -1,8 +1,6 @@
 import random
-from typing import List
 
-from basic_old import GameStats, DevCardPile
-from basic import Action
+from basic import Action, DevCardPile, GameStats
 from board import Board
 import logger
 
@@ -42,7 +40,7 @@ class RandomStrategy(Player):
                         ),
                     ]
 
-    def discard_cards(self, num_to_discard: int) -> List[int]:
+    def discard_cards(self, num_to_discard: int) -> list[int]:
         cards = self.get_resource_cards()
         return random.sample(range(len(cards)), num_to_discard)
 
@@ -55,7 +53,7 @@ class RandomStrategy(Player):
         return random.random() < 0.5
 
     def finalizes_trade(
-        self, propose_trade_action: Action, players: List[int]
+        self, propose_trade_action: Action, players: list[int]
     ) -> Action:
         return Action(
             Action.TRADE,

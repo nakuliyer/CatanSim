@@ -5,27 +5,12 @@ verbosity = -1
 GAME = 0
 DEBUG = 1
 
-
-class Message:
-    def __init__(self, message: str, level: int):
-        self.message = message
-        self.level = level
-
-
 # Static global message log
-messages = []
+messages: list[str] = []
 
 
 def log(message, level=DEBUG) -> None:
     """Log a message with a given verbosity level."""
-    if level <= verbosity:
-        messages.append(Message(message, level))
-
-
-def print_all() -> None:
-    """Print all logged messages without clearing the log."""
-    if not messages:
-        return
 
     def level_to_prefix(level):
         if level == GAME:
@@ -33,9 +18,15 @@ def print_all() -> None:
         elif level == DEBUG:
             return "[DEBUG] "
 
-    output = "\n".join(
-        [f"{level_to_prefix(msg.level)}{msg.message}" for msg in messages]
-    )
+    if level <= verbosity:
+        messages.append(f"{level_to_prefix(level)}{message}")
+
+
+def print_all() -> None:
+    """Print all logged messages without clearing the log."""
+    if not messages:
+        return
+    output = "\n".join(messages)
     print(output)
 
 

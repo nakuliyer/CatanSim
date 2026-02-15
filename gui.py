@@ -1,5 +1,4 @@
 from math import cos, pi, sin
-from typing import List, Optional, Tuple
 
 import pygame
 
@@ -35,15 +34,17 @@ PLAYER_COLORS = {
     5: (0, 0, 0),
 }
 
-root: Optional[pygame.Surface] = None
-big_text: Optional[pygame.font.Font] = None
+root: pygame.Surface | None = None
+big_text: pygame.font.Font | None = None
+msg_text: pygame.font.Font | None = None
 
 
 def init_gui() -> None:
-    global root, big_text
+    global root, big_text, msg_text
     pygame.init()
     pygame.font.init()
     big_text = pygame.font.SysFont("Helvetica", 16)
+    msg_text = pygame.font.SysFont("Helvetica", 8)
     root = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 
@@ -52,7 +53,7 @@ def draw_regular_polygon(
     color,
     vertex_count: int,
     radius: float,
-    position: Tuple[float, float],
+    position: tuple[float, float],
     width: int = 0,
 ) -> None:
     n, r = vertex_count, radius
@@ -75,7 +76,7 @@ def quit_gui() -> None:
             raise SystemExit
 
 
-def write(s: str, pos: Tuple[int, int]) -> None:
+def write(s: str, pos: tuple[int, int]) -> None:
     if not root or not big_text:
         return
     text = big_text.render(s, True, (255, 255, 255))
@@ -83,6 +84,44 @@ def write(s: str, pos: Tuple[int, int]) -> None:
     temp_surface.fill((0, 0, 0))
     temp_surface.blit(text, (0, 0))
     root.blit(temp_surface, pos)
+
+
+# Store log messages globally
+log_messages: list[str] = []
+
+
+def add_messages(messages: list[str]) -> None:
+    global log_messages
+    log_messages.extend(messages)
+
+
+def draw_messages() -> None:
+    if not root or not msg_text:
+        return
+    x = SCREEN_WIDTH - 300
+    y = 10
+    width = 290
+    height = SCREEN_HEIGHT - 20
+    # Draw background for log area
+    pygame.draw.rect(root, (30, 30, 30), (x, y, width, height))
+    # Draw border
+    pygame.draw.rect(root, (80, 80, 80), (x, y, width, height), 2)
+    # Draw each log message
+    chunked = []
+    for msg in log_messages:
+        i = 0
+        while len(msg):
+            if i > 0:
+                chunked.append("    " + msg[:70])
+                msg = msg[70:]
+            else:
+                chunked.append(msg[:74])
+                msg = msg[74:]
+            i += 1
+    chunked = chunked[-27:]
+    for i, msg in enumerate(chunked):
+        text = msg_text.render(msg, True, (255, 255, 255))
+        root.blit(text, (x + 10, y + 10 + i * 12))
 
 
 def draw_gui(board: Board) -> None:
@@ -148,8 +187,5 @@ def draw_gui(board: Board) -> None:
                     (dot_pos[0], dot_pos[1] + 40),
                     3,
                 )
-            # text = str(tile.value)
-            # if tile.has_knight:
-            #     text += "/K"
-            # write(text, (left_corner[0] + pad_row + c * 60 - 10, left_corner[1] + r * 60 - 20))
+    draw_messages()
     pygame.display.flip()

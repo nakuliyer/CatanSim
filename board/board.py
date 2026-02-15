@@ -1,4 +1,4 @@
-from basic_old import Tile, Port
+from basic import Tile, Port
 
 from .position import Position
 

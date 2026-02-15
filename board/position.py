@@ -1,7 +1,4 @@
-from typing import List, Optional
-
-from basic_old import Tile, Port
-import logger
+from basic import Tile, Port
 
 
 class Position:
@@ -9,7 +6,7 @@ class Position:
         self,
         row,
         col,
-        adjacent_tiles: Optional[List[Tile]] = None,
+        adjacent_tiles: list[Tile] | None = None,
         adjacent_port=None,
         left=None,
         right=None,
@@ -17,7 +14,7 @@ class Position:
         down=None,
     ):
         self.pos = (row, col)
-        self.adjacent_tiles: List[Tile] = adjacent_tiles or []
+        self.adjacent_tiles: list[Tile] = adjacent_tiles or []
         self.adjacent_port = adjacent_port
         self.left = left
         self.right = right
@@ -69,7 +66,7 @@ class Position:
         if can_go(pos.down, pos.down_road):
             next_q.append(pos_path + [pos.down])
 
-    def get_available_roads(self) -> List[str]:
+    def get_available_roads(self) -> list[str]:
         empty_road_names = ["left_road", "right_road", "up_road", "down_road"]
         road_to_dir = {
             "left_road": "left",

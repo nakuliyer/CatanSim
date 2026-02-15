@@ -1,7 +1,7 @@
 import numpy as np
 from itertools import chain
 
-from basic_old import Tile
+from basic import Tile
 
 from .board import Board
 

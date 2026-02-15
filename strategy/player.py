@@ -1,11 +1,9 @@
 from collections import defaultdict
 from copy import deepcopy
 import random
-from typing import List, Set, Tuple
 from abc import ABC, abstractmethod
 
-from basic_old import Port, Tile, GameStats, DevCard, DevCardPile
-from basic import Action
+from basic import Action, DevCard, DevCardPile, GameStats, Port, Tile
 from board import Board
 from board.position import Position
 import logger
@@ -28,13 +26,13 @@ class Player(ABC):
         self.settlements_remaining = 5
         self.cities_remaining = 4
         self.knights_played = 0
-        self.controlled_ports: Set[int] = set()
+        self.controlled_ports: set[int] = set()
         self.longest_road_length = 1
 
         # Private attributes between game and player
         self.resources = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
-        self.dev_cards: List[int] = []
-        self.unusable_dev_cards: List[int] = []  # Need to wait a turn before using
+        self.dev_cards: list[int] = []
+        self.unusable_dev_cards: list[int] = []  # Need to wait a turn before using
 
     ###################
     # General Methods #
@@ -60,13 +58,13 @@ class Player(ABC):
         return any(map(self.has_resource, self.resources))
 
     @staticmethod
-    def get_player_by_id(players: List["Player"], player_id: int) -> "Player":
+    def get_player_by_id(players: list["Player"], player_id: int) -> "Player":
         for player in players:
             if player.player_id == player_id:
                 return player
         raise ValueError("No player with specified ID")
 
-    def get_resource_cards(self) -> List[int]:
+    def get_resource_cards(self) -> list[int]:
         """Converts selfs resource cards from self's dictionary of counts to a list of cards, useful for actions like stealing a random card"""
         resource_cards = []
         for res in self.resources:
@@ -74,7 +72,7 @@ class Player(ABC):
                 resource_cards.append(res)
         return resource_cards
 
-    def set_resource_cards(self, resource_cards: List[int]):
+    def set_resource_cards(self, resource_cards: list[int]):
         """Converts a list of cards to self's dictionary of counts, see `get_resource_cards`"""
         self.resources = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
         for card in resource_cards:
@@ -89,11 +87,11 @@ class Player(ABC):
     ################################
 
     @abstractmethod
-    def settle(self, board: Board, second: bool) -> List[Action]:
+    def settle(self, board: Board, second: bool) -> list[Action]:
         raise NotImplementedError()
 
     @abstractmethod
-    def discard_cards(self, num_to_discard: int) -> List[int]:
+    def discard_cards(self, num_to_discard: int) -> list[int]:
         raise NotImplementedError()
 
     @abstractmethod
@@ -106,7 +104,7 @@ class Player(ABC):
 
     @abstractmethod
     def finalizes_trade(
-        self, propose_trade_action: Action, players: List[int]
+        self, propose_trade_action: Action, players: list[int]
     ) -> Action:
         raise NotImplementedError()
 
@@ -124,7 +122,7 @@ class Player(ABC):
     ########################
 
     def check_longest_road(self, board: Board, stats: GameStats):
-        def traverse(player: int, seen: List[Tuple[int, int]], node: Position):
+        def traverse(player: int, seen: list[tuple[int, int]], node: Position):
             seen = seen + [node.pos]
             options = []
             if node.left and node.left_road == player and node.left.pos not in seen:
@@ -289,7 +287,7 @@ class Player(ABC):
     # Legal Actions Methods #
     #########################
 
-    def get_settlement_options(self, board: Board) -> List[Action]:
+    def get_settlement_options(self, board: Board) -> list[Action]:
         options = []
         for row in board.positions:
             for pos in row:
@@ -304,7 +302,7 @@ class Player(ABC):
                     options.append(Action(Action.SETTLE, pos=pos.pos))
         return options
 
-    def get_city_options(self, board: Board) -> List[Action]:
+    def get_city_options(self, board: Board) -> list[Action]:
         options = []
         for row in board.positions:
             for pos in row:
@@ -312,7 +310,7 @@ class Player(ABC):
                     options.append(Action(Action.BUILD_CITY, pos=pos.pos))
         return options
 
-    def get_robber_options(self, board: Board) -> List[Action]:
+    def get_robber_options(self, board: Board) -> list[Action]:
         knight_options = board.get_knight_options(self.player_id)
         return [
             Action(Action.ROB, tile=tile.pos, steal_from_id=steal_from_id)
@@ -321,7 +319,7 @@ class Player(ABC):
 
     def get_legal_actions(
         self, board: Board, dev_cards_pile: DevCardPile
-    ) -> List[Action]:
+    ) -> list[Action]:
         legal_actions = []
         if self.can_build_dev_card() and dev_cards_pile.has_cards():
             legal_actions.append(Action(Action.GET_DEV_CARD))
@@ -413,7 +411,7 @@ class Player(ABC):
         self,
         action: Action,
         board: Board,
-        players: List["Player"],
+        players: list["Player"],
         stats: GameStats,
         dev_cards: DevCardPile,
     ) -> None:
@@ -558,8 +556,8 @@ class Player(ABC):
             self.resources[resource2] += 1
         elif action.action == Action.TRADE:
             with_player_id: int = action.params["with_player"]
-            mine: List[int] = action.params["mine"]
-            theirs: List[int] = action.params["theirs"]
+            mine: list[int] = action.params["mine"]
+            theirs: list[int] = action.params["theirs"]
             other_player = Player.get_player_by_id(players, with_player_id)
             for res in mine:
                 self.resources[res] -= 1
