@@ -137,6 +137,8 @@ class Game:
     def write(self) -> None:
         if self.gui:
             add_messages(logger.messages)
+            logger.print_all()
+            logger.flush()
         else:
             logger.print_all()
             logger.flush()
