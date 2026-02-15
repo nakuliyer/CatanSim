@@ -8,7 +8,6 @@ from board import Board
 from board.position import Position
 import logger
 
-
 colors = ["red", "blue", "orange", "white", "green", "black"]
 
 
@@ -16,7 +15,7 @@ class Player(ABC):
     # Class variable to keep track of number of players created, used for assigning player IDs and colors
     num_players = 0
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Public attributes
         self.player_id = Player.num_players
         Player.num_players += 1
@@ -31,39 +30,35 @@ class Player(ABC):
 
         # Private attributes between game and player
         self.resources = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
-        self.dev_cards: list[int] = []
+        self.cards: list[int] = []
         self.unusable_dev_cards: list[int] = []  # Need to wait a turn before using
 
     ###################
     # General Methods #
     ###################
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "Player {} (\n\tresources={},\n\troads_remaining={},\n\tsettlements_remaining={},\n\tcities_remaining={},\n\tdev_cards={},\n\tknights_played={},\n\tcontrolled_ports={},\n\tlongest_road_length={})".format(
             self.color,
             {Tile.to_name(k): v for k, v in self.resources.items()},
             self.roads_remaining,
             self.settlements_remaining,
             self.cities_remaining,
-            DevCard.to_names(self.dev_cards),
+            DevCard.to_names(self.cards),
             self.knights_played,
             list(map(Port.to_name, self.controlled_ports)),
             self.longest_road_length,
         )
 
+    # Private attributes between game and player
     def has_resource(self, resource: int) -> bool:
         return self.resources[resource] > 0
 
-    def has_any_resource(self) -> bool:
-        return any(map(self.has_resource, self.resources))
+    # Private attributes between game and player
+    def empty(self) -> bool:
+        return sum(self.resources.values()) == 0
 
-    @staticmethod
-    def get_player_by_id(players: list["Player"], player_id: int) -> "Player":
-        for player in players:
-            if player.player_id == player_id:
-                return player
-        raise ValueError("No player with specified ID")
-
+    # Private attributes between game and player
     def get_resource_cards(self) -> list[int]:
         """Converts selfs resource cards from self's dictionary of counts to a list of cards, useful for actions like stealing a random card"""
         resource_cards = []
@@ -72,6 +67,7 @@ class Player(ABC):
                 resource_cards.append(res)
         return resource_cards
 
+    # Private attributes between game and player
     def set_resource_cards(self, resource_cards: list[int]):
         """Converts a list of cards to self's dictionary of counts, see `get_resource_cards`"""
         self.resources = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
@@ -79,7 +75,8 @@ class Player(ABC):
             self.resources[card] += 1
 
     def turn_ended(self):
-        self.dev_cards += self.unusable_dev_cards
+        """Call at end of turn to update any attributes that need to wait until the end of the turn, such as dev cards that were just bought"""
+        self.cards += self.unusable_dev_cards
         self.unusable_dev_cards = []
 
     ################################
@@ -113,7 +110,6 @@ class Player(ABC):
         self,
         board: Board,
         stats: GameStats,
-        dev_cards: DevCardPile,
     ) -> Action:
         raise NotImplementedError()
 
@@ -203,7 +199,7 @@ class Player(ABC):
         if stats.longest_road_player == self.player_id:
             vp += 2
             sources["longest_road"] = True
-        for i in self.dev_cards:
+        for i in self.cards:
             if i == DevCard.VP:
                 vp += 1
                 sources["num_vp_cards"] += 1
@@ -349,11 +345,9 @@ class Player(ABC):
             for tile, steal_from_id in knight_options
         ]
 
-    def get_legal_actions(
-        self, board: Board, dev_cards_pile: DevCardPile
-    ) -> list[Action]:
+    def get_legal_actions(self, board: Board, stats: GameStats) -> list[Action]:
         legal_actions = []
-        if self.can_build_dev_card() and dev_cards_pile.has_cards():
+        if self.can_build_dev_card() and stats.num_dev_cards > 0:
             legal_actions.append(Action(Action.GET_DEV_CARD))
         if self.can_build_settlement():
             settlement_options = self.get_settlement_options(board)
@@ -392,16 +386,16 @@ class Player(ABC):
                             Action(Action.TWO_TO_ONE, source=port, dest=new_res)
                         )
         # Dev Cards
-        if DevCard.KNIGHT in self.dev_cards:
+        if DevCard.KNIGHT in self.cards:
             knight_options = board.get_knight_options(self.player_id)
             legal_actions += [
                 Action(Action.USE_KNIGHT, tile=tile.pos, steal_from_id=steal_from_id)
                 for tile, steal_from_id in knight_options
             ]
-        if DevCard.MONOPOLY in self.dev_cards:
+        if DevCard.MONOPOLY in self.cards:
             for res in range(5):
                 legal_actions.append(Action(Action.USE_MONOPOLY, resource=res))
-        if DevCard.PLENTY in self.dev_cards:
+        if DevCard.PLENTY in self.cards:
             for res1 in range(5):
                 for res2 in range(5):
                     legal_actions.append(
@@ -409,7 +403,7 @@ class Player(ABC):
                             Action.USE_YEAR_OF_PLENTY, resource1=res1, resource2=res2
                         )
                     )
-        if DevCard.ROADS in self.dev_cards:
+        if DevCard.ROADS in self.cards:
             if self.roads_remaining >= 1:
                 for pos1, road1 in board.get_road_options(self.player_id):
                     if self.roads_remaining >= 2:
@@ -438,168 +432,3 @@ class Player(ABC):
                             )
                         )
         return legal_actions
-
-    def submit_action(
-        self,
-        action: Action,
-        board: Board,
-        players: list["Player"],
-        stats: GameStats,
-        dev_cards: DevCardPile,
-    ) -> None:
-        logger.game("Player {} did {}".format(self.color, action))
-        if action.action in (Action.SETTLE_INIT, Action.SETTLE):
-            self.settlements_remaining -= 1
-            pos_tuple: tuple[int, int] = action.params["pos"]
-            pos: Position = board.get_position(pos_tuple)
-            pos.fixture = self.player_id
-            pos.fixture_type = 0
-            if pos.adjacent_port:
-                self.controlled_ports.add(pos.adjacent_port)
-            for tile in pos.adjacent_tiles:
-                tile.owning_player_ids.add(self.player_id)
-            if action.action == Action.SETTLE:
-                self.resources[Tile.MUD] -= 1
-                self.resources[Tile.TREE] -= 1
-                self.resources[Tile.WHEAT] -= 1
-                self.resources[Tile.SHEEP] -= 1
-        elif action.action in (Action.BUILD_ROAD_INIT, Action.BUILD_ROAD):
-            if self.roads_remaining == 0:
-                return
-            self.roads_remaining -= 1
-            pos_tuple: tuple[int, int] = action.params["pos"]
-            pos: Position = board.get_position(pos_tuple)
-            road_name: str = action.params["road_name"]
-            pos.build_road(road_name, self.player_id)
-            self.check_longest_road(board, stats)
-            if action.action == Action.BUILD_ROAD:
-                self.resources[Tile.MUD] -= 1
-                self.resources[Tile.TREE] -= 1
-        elif action.action == Action.USE_DEV_ROADS:
-            self.dev_cards.remove(DevCard.ROADS)
-            if self.roads_remaining == 0:
-                return
-            pos1_tuple: tuple[int, int] = action.params["pos1"]
-            pos1: Position = board.get_position(pos1_tuple)
-            road1: str = action.params["road1"]
-            pos1.build_road(road1, self.player_id)
-            self.roads_remaining -= 1
-            if self.roads_remaining == 0:
-                return
-            pos2_tuple: tuple[int, int] = action.params["pos2"]
-            pos2: Position = board.get_position(pos2_tuple)
-            road2: str = action.params["road2"]
-            pos2.build_road(road2, self.player_id)
-            self.roads_remaining -= 1
-        elif action.action == Action.GET_DEV_CARD:
-            self.resources[Tile.ROCK] -= 1
-            self.resources[Tile.SHEEP] -= 1
-            self.resources[Tile.WHEAT] -= 1
-            card = dev_cards.draw_top()
-            self.unusable_dev_cards.append(card)
-            logger.debug(
-                "Player {} got card {}".format(self.color, DevCard.to_name(card))
-            )
-        elif action.action == Action.BUILD_CITY:
-            self.cities_remaining -= 1
-            self.settlements_remaining += 1
-            self.resources[Tile.ROCK] -= 3
-            self.resources[Tile.WHEAT] -= 2
-            pos_tuple: tuple[int, int] = action.params["pos"]
-            pos: Position = board.get_position(pos_tuple)
-            pos.fixture_type = 1
-        elif action.action == Action.FOUR_TO_ONE:
-            source: int = action.params["source"]
-            dest: int = action.params["dest"]
-            self.resources[source] -= 4
-            self.resources[dest] += 1
-        elif action.action == Action.THREE_TO_ONE:
-            source: int = action.params["source"]
-            dest: int = action.params["dest"]
-            self.resources[source] -= 3
-            self.resources[dest] += 1
-        elif action.action == Action.TWO_TO_ONE:
-            source: int = action.params["source"]
-            dest: int = action.params["dest"]
-            self.resources[source] -= 2
-            self.resources[dest] += 1
-        elif action.action in (Action.USE_KNIGHT, Action.ROB):
-            if action.action == Action.USE_KNIGHT:
-                self.dev_cards.remove(DevCard.KNIGHT)
-                self.knights_played += 1
-            for row in board.tiles:
-                for tile in row:
-                    tile.has_knight = False
-            tile_tuple: tuple[int, int] = action.params["tile"]
-            tile: Tile = board.get_tile(tile_tuple)
-            steal_from_id: int | None = action.params["steal_from_id"]
-            tile.has_knight = True
-            if steal_from_id is not None:
-                player_to_steal_from: "Player" = Player.get_player_by_id(
-                    players, steal_from_id
-                )
-                op_resource_cards = player_to_steal_from.get_resource_cards()
-                if len(op_resource_cards):
-                    stolen_card = op_resource_cards.pop(
-                        random.randrange(len(op_resource_cards))
-                    )
-                    player_to_steal_from.set_resource_cards(op_resource_cards)
-                    self.resources[stolen_card] += 1
-                    logger.debug(
-                        "Player {} stole a {} from Player {}".format(
-                            self.color,
-                            Tile.to_name(stolen_card),
-                            player_to_steal_from.color,
-                        )
-                    )
-                    logger.game(
-                        "Player {} stole a resource from Player {}".format(
-                            self.color, player_to_steal_from.color
-                        )
-                    )
-                else:
-                    logger.game(
-                        "Player {} tried to steal from Player {}, but nothing to steal".format(
-                            self.color, player_to_steal_from.color
-                        )
-                    )
-            self.check_largest_army(stats)
-        elif action.action == Action.USE_MONOPOLY:
-            resource: int = action.params["resource"]
-            self.dev_cards.remove(DevCard.MONOPOLY)
-            total = 0
-            for player_to_steal_from in players:
-                stealing = player_to_steal_from.resources[resource]
-                player_to_steal_from.resources[resource] = 0
-                total += stealing
-                logger.game(
-                    "Stole {} {} from Player {} with Monopoly".format(
-                        stealing,
-                        Tile.to_name(resource),
-                        player_to_steal_from.color,
-                    )
-                )
-            self.resources[resource] = total
-        elif action.action == Action.USE_YEAR_OF_PLENTY:
-            resource1: int = action.params["resource1"]
-            resource2: int = action.params["resource2"]
-            self.dev_cards.remove(DevCard.PLENTY)
-            self.resources[resource1] += 1
-            self.resources[resource2] += 1
-        elif action.action == Action.TRADE:
-            with_player_id: int = action.params["with_player"]
-            mine: list[int] = action.params["mine"]
-            theirs: list[int] = action.params["theirs"]
-            other_player = Player.get_player_by_id(players, with_player_id)
-            for res in mine:
-                self.resources[res] -= 1
-                other_player.resources[res] += 1
-            for res in theirs:
-                other_player.resources[res] -= 1
-                self.resources[res] += 1
-        elif action.action == Action.PROPOSE_TRADE:
-            raise ValueError(
-                "Propose trade action must be handled in the main game loop"
-            )
-        else:
-            raise ValueError("Unknown Action")

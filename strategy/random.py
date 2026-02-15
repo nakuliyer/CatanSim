@@ -66,9 +66,8 @@ class RandomStrategy(Player):
         self,
         board: Board,
         stats: GameStats,
-        dev_cards: DevCardPile,
     ) -> Action:
-        legal_actions = self.get_legal_actions(board, dev_cards)
+        legal_actions = self.get_legal_actions(board, stats)
         logger.debug(
             "Player {} has legal actions {}".format(self.player_id, legal_actions)
         )
@@ -76,10 +75,10 @@ class RandomStrategy(Player):
         if (len(legal_actions) and r < 0.3) or (not len(legal_actions) and r < 0.7):
             # do nothing chance
             return Action(Action.DO_NOTHING)
-        elif (len(legal_actions) and r < 0.5) or (not len(legal_actions)):
+        elif not self.empty() and (
+            (len(legal_actions) and r < 0.5) or (not len(legal_actions))
+        ):
             # propose trade chance
-            if not self.has_any_resource():
-                return Action(Action.DO_NOTHING)
             cards = self.get_resource_cards()
             # limit number of cards to give in trade to 3 to avoid too much trading
             num_of_cards_to_give = min(random.randint(1, 3), len(cards))
@@ -93,6 +92,8 @@ class RandomStrategy(Player):
                 theirs=cards_wanted,
             )
             return action
-        else:
+        elif len(legal_actions):
             # do something else
             return random.choice(legal_actions)
+        else:
+            return Action(Action.DO_NOTHING)
