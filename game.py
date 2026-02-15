@@ -30,6 +30,10 @@ class Game:
 
         self.turn = 0  # player id of current turn
 
+    ###################
+    # General Methods #
+    ###################
+
     def get_player_by_id(self, player_id: int) -> "Player":
         for player in self.players:
             if player.player_id == player_id:

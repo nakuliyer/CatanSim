@@ -1,9 +1,8 @@
 from collections import defaultdict
 from copy import deepcopy
-import random
 from abc import ABC, abstractmethod
 
-from basic import Action, DevCard, DevCardPile, GameStats, Port, Tile
+from basic import Action, DevCard, GameStats, Port, Tile
 from board import Board
 from board.position import Position
 import logger
@@ -117,73 +116,6 @@ class Player(ABC):
     # Verification Methods #
     ########################
 
-    def check_longest_road(self, board: Board, stats: GameStats):
-        """
-        Computes the longest continuous road for this player and updates stats if necessary.
-        """
-
-        def traverse(pos, prev_pos, visited_edges):
-            max_length = 0
-            # For each direction, check if the road belongs to the player and hasn't been visited
-            directions = [
-                ("left", "left_road", "left"),
-                ("right", "right_road", "right"),
-                ("up", "up_road", "up"),
-                ("down", "down_road", "down"),
-            ]
-            for dir_name, road_attr, next_attr in directions:
-                if hasattr(pos, road_attr):
-                    road_owner = getattr(pos, road_attr)
-                    next_pos = getattr(pos, next_attr)
-                    if (
-                        road_owner == self.player_id
-                        and next_pos is not None
-                        and (pos.pos, next_pos.pos) not in visited_edges
-                        and (next_pos.pos, pos.pos) not in visited_edges
-                        and (prev_pos is None or next_pos.pos != prev_pos.pos)
-                    ):
-                        # Mark this edge as visited
-                        visited_edges.add((pos.pos, next_pos.pos))
-                        length = 1 + traverse(next_pos, pos, visited_edges)
-                        max_length = max(max_length, length)
-                        visited_edges.remove((pos.pos, next_pos.pos))
-            return max_length
-
-        max_road_size = 0
-        for row in board.positions:
-            for pos in row:
-                # Start from every position that has a road belonging to the player
-                directions = [
-                    ("left", "left_road", "left"),
-                    ("right", "right_road", "right"),
-                    ("up", "up_road", "up"),
-                    ("down", "down_road", "down"),
-                ]
-                for dir_name, road_attr, next_attr in directions:
-                    if hasattr(pos, road_attr):
-                        road_owner = getattr(pos, road_attr)
-                        next_pos = getattr(pos, next_attr)
-                        if road_owner == self.player_id and next_pos is not None:
-                            visited_edges = set()
-                            visited_edges.add((pos.pos, next_pos.pos))
-                            length = 1 + traverse(next_pos, pos, visited_edges)
-                            max_road_size = max(max_road_size, length)
-
-        if max_road_size > stats.longest_road_count and max_road_size >= 5:
-            stats.longest_road_count = max_road_size
-            stats.longest_road_player = self.player_id
-            logger.game(
-                "Player {} now has plaque for longest road of size {}".format(
-                    self.color, max_road_size
-                )
-            )
-        self.longest_road_length = max_road_size
-
-    def check_largest_army(self, stats: GameStats):
-        if self.knights_played > stats.largest_army_count:
-            stats.largest_army_count = self.knights_played
-            stats.largest_army_player = self.player_id
-
     def vps(self, board: Board, stats: GameStats):
         sources = {  # for pretty printing
             "largest_army": False,
@@ -268,9 +200,9 @@ class Player(ABC):
         else:
             self.collect_resources(board, d6)
 
-    #################################
-    # Building Capabilities Methods #
-    #################################
+    ########################
+    # Capabilities Methods #
+    ########################
 
     def can_accept_trade(self, propose_trade_action: Action) -> bool:
         res_to_qty = defaultdict(int)
