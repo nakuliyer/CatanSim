@@ -11,7 +11,7 @@ class RandomStrategy(Player):
     def settle(self, board: Board, second: bool):
         while True:
             pos = random.choice(random.choice(board.positions))
-            if board.can_settle(pos):
+            if pos.can_settle():
                 road_names = ["left_road", "right_road", "up_road", "down_road"]
                 road_to_dir = {
                     "left_road": "left",

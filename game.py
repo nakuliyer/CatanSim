@@ -2,18 +2,23 @@ import random
 import time
 
 from basic import DevCardPile, GameStats, Action
-from board import Board
+from board import RandomBoard
 from strategy import RandomStrategy
 from player import Player
 from gui import init_gui, draw_gui, quit_gui
 import logger
 
 
+class Game:
+    def __init__(self, players: list[Player]):
+        pass
+
+
 def play(gui: bool, force_quit_after_round: int) -> None:
     if gui:
         init_gui()
 
-    board = Board()
+    board = RandomBoard()
     logger.info("Board is\n{}".format(board))
     cards = DevCardPile()
     stats = GameStats()

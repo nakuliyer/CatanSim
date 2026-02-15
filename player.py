@@ -242,7 +242,7 @@ class Player:
                     pos.down_road == self.player_id,
                 ]
                 owns_road = owns_road.count(True) == 1
-                if board.can_settle(pos) and owns_road:
+                if pos.can_settle() and owns_road:
                     options.append(Action(Action.SETTLE, pos=pos))
         return options
 

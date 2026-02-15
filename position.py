@@ -78,24 +78,13 @@ class Position:
         ]
         return empty_road_names
 
-    # def dist_port(self, port: int, player: int):
-    #     seen = set(self.pos)
-    #     q: List[Position] = [[self]]
-    #     while len(q):
-    #         next_q = []
-    #         soln = []
-    #         for pos_path in q:
-    #             pos = pos_path[-1]
-    #             seen.add(pos)
-    #             if pos.adjacent_port == port:
-    #                 soln.append(pos_path)
-    #             Position.add_adjacent_pos_to_queue(player, pos, next_q, seen, pos_path)
-    #         if len(soln):
-    #             return random.choice(soln)[1:]
-    #         q = next_q
-
-    # def dist_res(self, resource: int):
-    #     pass
+    def can_settle(self):
+        if self.fixture is None:
+            for adj in self.adjacent_pos():
+                if adj.fixture:
+                    return False
+            return True
+        return False
 
     def __str__(self):
         adj = "(" + ",".join(list(map(str, self.adjacent_tiles))) + ")"
