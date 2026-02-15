@@ -4,8 +4,7 @@ import time
 from basic_old import DevCardPile, GameStats
 from basic import Action
 from board import RandomBoard
-from strategy import RandomStrategy
-from player import Player
+from strategy import Player, RandomStrategy
 from gui import init_gui, draw_gui, quit_gui
 import logger
 
@@ -72,7 +71,7 @@ def play(gui: bool, force_quit_after_round: int) -> None:
             logger.critical("Player {} won!".format(players[turn].player_id))
             gg = True
         if gui:
-            draw_gui(board, players)
+            draw_gui(board)
             time.sleep(0.01)
         turn = (turn + 1) % len(players)
         if turn == 0:
@@ -88,7 +87,7 @@ def play(gui: bool, force_quit_after_round: int) -> None:
     if gui:
         while True:
             quit_gui()
-            draw_gui(board, players)
+            draw_gui(board)
 
 
 def play_cli(force_quit_after_round: int) -> None:

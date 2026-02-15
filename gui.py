@@ -4,7 +4,6 @@ from typing import List, Optional, Tuple
 import pygame
 
 from board import Board
-from player import Player
 
 BG_COLOR = (0, 0, 0)
 SCREEN_WIDTH = 640
@@ -73,7 +72,7 @@ def write(s: str, pos: Tuple[int, int]) -> None:
     root.blit(temp_surface, pos)
 
 
-def draw_gui(board: Board, players: List[Player]) -> None:
+def draw_gui(board: Board) -> None:
     if not root:
         return
     root.fill(BG_COLOR)

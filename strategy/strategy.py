@@ -4,8 +4,9 @@ from typing import List
 from basic_old import GameStats, DevCardPile
 from basic import Action
 from board import Board
-from player import Player
 import logger
+
+from .player import Player
 
 
 class RandomStrategy(Player):
