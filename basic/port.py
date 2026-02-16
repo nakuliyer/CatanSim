@@ -8,5 +8,5 @@ class Port:
 
     @staticmethod
     def to_name(port: int) -> str:
-        h = {0: "Wheat", 1: "Tree", 2: "Sheep", 3: "Mud", 4: "Rock", 5: "Three to One"}
+        h = {0: "Wheat", 1: "Tree", 2: "Sheep", 3: "Mud", 4: "Rock", 5: "3:1"}
         return h[port]

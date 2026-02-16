@@ -3,7 +3,7 @@ import time
 
 from basic import Action, DevCardPile, DevCard, GameStats, Tile
 from board import Board, RandomBoard, Position
-from strategy import Player, RandomStrategy
+from strategy import Player, RandomStrategy, HeuristicStrategy
 from gui import init_gui, draw_gui, quit_gui, add_messages
 import logger
 
@@ -89,6 +89,7 @@ class Game:
         for player in self.players:
             logger.debug(player)
         self.stats.num_dev_cards = len(self.cards.pile)
+        logger.debug("Game stats: {}".format(self.stats))
         vps = self.players[turn].vps(self.board, self.stats)
         if vps >= 10:
             logger.game("Player {} won!".format(self.players[turn].color))
@@ -223,6 +224,12 @@ class Game:
             player.resources[Tile.TREE] -= 1
             player.resources[Tile.WHEAT] -= 1
             player.resources[Tile.SHEEP] -= 1
+        if action.action == Action.SETTLE_INIT:
+            second: bool = action.params["second"]
+            if second:
+                for tile in pos.adjacent_tiles:
+                    if tile.tile != Tile.DESERT:
+                        player.resources[tile.tile] += 1
 
     def handle_build_road(self, action: Action, player: Player) -> None:
         if player.roads_remaining == 0:
@@ -421,13 +428,14 @@ class Game:
 
         if action.action not in action_handlers:
             raise ValueError("Invalid action {}".format(action))
+        logger.game("Player {} takes action {}".format(player.color, action))
         action_handlers[action.action](action, player)
 
 
 def play(gui: bool, force_quit_after_round: int, speed: float) -> None:
     board = RandomBoard()
     players: list[Player] = [
-        RandomStrategy(),
+        HeuristicStrategy(),
         RandomStrategy(),
         RandomStrategy(),
     ]

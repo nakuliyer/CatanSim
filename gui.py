@@ -11,11 +11,17 @@ SCREEN_HEIGHT = 360
 LEFT_CORNER = (50, 50)
 
 RESOURCE_COLORS = {
-    0: (255, 255, 153),
-    1: (0, 255, 0),
-    2: (34, 139, 34),
+    # wheat
+    0: (255, 255, 35),
+    # tree
+    1: (34, 139, 34),
+    # sheep
+    2: (0, 255, 0),
+    # mud
     3: (165, 42, 42),
+    # rock
     4: (100, 100, 100),
+    # desert
     5: (255, 255, 255),
 }
 
@@ -187,5 +193,12 @@ def draw_gui(board: Board) -> None:
                     (dot_pos[0], dot_pos[1] + 40),
                     3,
                 )
+            if pos.adjacent_port is not None:
+                port_color = (
+                    RESOURCE_COLORS[pos.adjacent_port]
+                    if pos.adjacent_port != 5
+                    else (255, 0, 255)
+                )
+                pygame.draw.circle(root, port_color, dot_pos, 10, 2)
     draw_messages()
     pygame.display.flip()

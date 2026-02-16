@@ -1,6 +1,6 @@
 import random
 
-from basic import Action, DevCardPile, GameStats
+from basic import Action, GameStats
 from board import Board
 import logger
 
@@ -12,33 +12,11 @@ class RandomStrategy(Player):
         while True:
             pos = random.choice(random.choice(board.positions))
             if pos.can_settle():
-                road_names = ["left_road", "right_road", "up_road", "down_road"]
-                road_to_dir = {
-                    "left_road": "left",
-                    "right_road": "right",
-                    "up_road": "up",
-                    "down_road": "down",
-                }
-                road_names = [
-                    road_name
-                    for road_name in road_names
-                    if getattr(pos, road_name) is None
-                    and getattr(pos, road_to_dir[road_name]) is not None
+                road_name = random.choice(pos.get_available_roads())
+                return [
+                    Action(Action.SETTLE_INIT, pos=pos.pos, second=second),
+                    Action(Action.BUILD_ROAD_INIT, pos=pos.pos, road_name=road_name),
                 ]
-                if len(road_names):
-                    road_name = random.choice(road_names)
-                    if second:
-                        for tile in pos.adjacent_tiles:
-                            if tile.tile < 5:
-                                self.resources[
-                                    tile.tile
-                                ] += 1  # collect initial resources
-                    return [
-                        Action(Action.SETTLE_INIT, pos=pos.pos),
-                        Action(
-                            Action.BUILD_ROAD_INIT, pos=pos.pos, road_name=road_name
-                        ),
-                    ]
 
     def discard_cards(self, num_to_discard: int) -> list[int]:
         cards = self.get_resource_cards()
@@ -55,6 +33,7 @@ class RandomStrategy(Player):
     def finalizes_trade(
         self, propose_trade_action: Action, players: list[int]
     ) -> Action:
+        # choose a random player to trade with out of the ones that accepted the trade
         return Action(
             Action.TRADE,
             with_player=random.choice(players),
